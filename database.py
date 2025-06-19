@@ -1,37 +1,62 @@
-import sqlite3
+import mysql.connector
+from mysql.connector import Error
 import hashlib
 
-DATABASE = 'hotel.db'
+# Configuración de conexión a MySQL
+DATABASE_CONFIG = {
+    'host': 'localhost',
+    'user': 'tu_usuario',
+    'password': 'tu_contraseña',
+    'database': 'hotel'
+}
 
 def get_db():
-    return sqlite3.connect(DATABASE)
+    return mysql.connector.connect(**DATABASE_CONFIG)
 
 def create_tables():
-    with get_db() as conn:
+    try:
+        conn = get_db()
         cursor = conn.cursor()
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS admins (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        )
+            CREATE TABLE IF NOT EXISTS admins (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL
+            )
         ''')
         conn.commit()
+        cursor.close()
+        conn.close()
+    except Error as e:
+        print(f"Error al crear tablas: {e}")
 
 def create_admin(username, password):
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     try:
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('INSERT INTO admins (username, password) VALUES (?, ?)', (username, hashed_password))
-            conn.commit()
-            print(f"Administrador '{username}' creado exitosamente.")
-    except sqlite3.IntegrityError:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO admins (username, password) VALUES (%s, %s)', (username, hashed_password))
+        conn.commit()
+        print(f"Administrador '{username}' creado exitosamente.")
+    except mysql.connector.IntegrityError:
         print(f"El administrador '{username}' ya existe.")
+    except Error as e:
+        print(f"Error al crear admin: {e}")
+    finally:
+        cursor.close()
+        conn.close()
 
 def check_admin_credentials(username, password):
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    with get_db() as db:
-        cursor = db.cursor()
-        cursor.execute('SELECT * FROM admins WHERE username = ? AND password = ?', (username, hashed_password))
-        return cursor.fetchone()
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM admins WHERE username = %s AND password = %s', (username, hashed_password))
+        result = cursor.fetchone()
+        return result
+    except Error as e:
+        print(f"Error al verificar credenciales: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()

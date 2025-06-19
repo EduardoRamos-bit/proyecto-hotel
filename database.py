@@ -60,3 +60,35 @@ def check_admin_credentials(username, password):
     finally:
         cursor.close()
         conn.close()
+
+def create_tables():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # Tabla de administradores
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS admins (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL
+            )
+        ''')
+
+        # Tabla de clientes
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS clientes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                apellido VARCHAR(100) NOT NULL,
+                dni VARCHAR(20),
+                pasaporte VARCHAR(20)
+            )
+        ''')
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("Tablas creadas correctamente.")
+    except Error as e:
+        print(f"Error al crear tablas: {e}")

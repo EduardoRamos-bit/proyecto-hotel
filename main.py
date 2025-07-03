@@ -36,15 +36,3 @@ def admin_panel():
 def logout():
     session.clear()
     return redirect(url_for('admin_login'))
-
-# --- INICIO DEL SERVIDOR ---
-if __name__ == '__main__':
-    # Crea admin si no existe (podés quitar esto después de probar)
-    database.create_admin('EDUARDO RAMOS', '12345')
-    database.create_admin('JUAN PUCHETA', '12345')
-    app.run(debug=True)
-
-    database.create_tables()
-    database.create_admin('EDUARDO RAMOS', '12345')
-    database.create_admin('JUAN PUCHETA', '12345')
-    app.run(debug=True)

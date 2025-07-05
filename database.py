@@ -121,3 +121,11 @@ def listar_todas_habitaciones():
     cursor.close()
     conn.close()
     return habitaciones
+
+def cambiar_estado_habitacion(id_habitacion, nuevo_estado):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE habitaciones SET estado = %s WHERE id = %s", (nuevo_estado, id_habitacion))
+    conn.commit()
+    cursor.close()
+    conn.close()

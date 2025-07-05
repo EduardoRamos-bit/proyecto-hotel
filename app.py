@@ -103,5 +103,20 @@ def lista_habitaciones():
     habitaciones = database.listar_todas_habitaciones()  # Función que lista todo sin filtro
     return render_template('lista_habitaciones.html', habitaciones=habitaciones)
 
+@app.route('/habitaciones/estado', methods=['GET', 'POST'])
+def cambiar_estado_habitaciones():
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    habitaciones = database.listar_todas_habitaciones()
+
+    if request.method == 'POST':
+        id_habitacion = request.form['habitacion_id']
+        nuevo_estado = request.form['nuevo_estado']
+        database.cambiar_estado_habitacion(id_habitacion, nuevo_estado)
+        flash(f"Estado de habitación {id_habitacion} actualizado a {nuevo_estado}.")
+        return redirect(url_for('cambiar_estado_habitaciones'))
+
+    return render_template('cambiar_estado_habitaciones.html', habitaciones=habitaciones)
+
 if __name__ == '__main__':
     app.run(debug=True)

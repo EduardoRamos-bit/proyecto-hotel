@@ -1,0 +1,15 @@
+<h2>Habitaciones</h2>
+<table border="1">
+  <tr>
+    <th>Número</th><th>Tipo</th><th>Precio por noche</th><th>Estado</th>
+  </tr>
+  {% for hab in habitaciones %}
+  <tr>
+    <td>{{ hab.numero_habitacion }}</td>
+    <td>{{ hab.tipo }}</td>
+    <td>${{ hab.precio_por_noche }}</td>
+    <td>{{ hab.estado }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<a href="{{ url_for('admin_panel') }}">Volver al Panel</a>

@@ -112,3 +112,12 @@ def listar_reservas():
     cursor.close()
     conn.close()
     return reservas
+
+def listar_todas_habitaciones():
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM habitaciones ORDER BY numero_habitacion")
+    habitaciones = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return habitaciones

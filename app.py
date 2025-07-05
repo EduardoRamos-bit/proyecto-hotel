@@ -96,5 +96,12 @@ def lista_reservas():
     reservas = database.listar_reservas()
     return render_template('lista_reservas.html', reservas=reservas)
 
+@app.route('/habitaciones')
+def lista_habitaciones():
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    habitaciones = database.listar_todas_habitaciones()  # Función que lista todo sin filtro
+    return render_template('lista_habitaciones.html', habitaciones=habitaciones)
+
 if __name__ == '__main__':
     app.run(debug=True)

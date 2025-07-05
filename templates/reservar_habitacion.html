@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head><title>Reservar Habitación</title></head>
+<body>
+<h2>Reservar Habitación</h2>
+<form method="post">
+  Habitación:
+  <select name="habitacion" required>
+    {% for hab in habitaciones %}
+      <option value="{{ hab.id }}">{{ hab.numero_habitacion }} - {{ hab.tipo }} - ${{ hab.precio_por_noche }}</option>
+    {% endfor %}
+  </select><br>
+  Fecha Entrada: <input type="date" name="fecha_entrada" required><br>
+  Fecha Salida: <input type="date" name="fecha_salida" required><br>
+  <button type="submit">Reservar</button>
+</form>
+{% if error %}
+<p style="color:red;">{{ error }}</p>
+{% endif %}
+</body>
+</html>

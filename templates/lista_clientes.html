@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Lista de Clientes</title></head>
+<body>
+<h2>Clientes Registrados</h2>
+<table border="1">
+  <tr>
+    <th>ID</th><th>Nombre</th><th>Apellido</th><th>DNI</th><th>Teléfono</th><th>Email</th><th>Dirección</th><th>Fecha Registro</th>
+  </tr>
+  {% for c in clientes %}
+  <tr>
+    <td>{{ c.id_cliente }}</td>
+    <td>{{ c.nombre }}</td>
+    <td>{{ c.apellido }}</td>
+    <td>{{ c.dni_pasaporte_cpf }}</td>
+    <td>{{ c.telefono }}</td>
+    <td>{{ c.email }}</td>
+    <td>{{ c.direccion }}</td>
+    <td>{{ c.fecha_registro }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<a href="{{ url_for('admin_panel') }}">Volver al Panel</a>
+</body>
+</html>

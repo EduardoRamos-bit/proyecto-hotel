@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Nuevo Cliente</title></head>
+<body>
+<h2>Nuevo Cliente</h2>
+<form method="post">
+  Nombre: <input type="text" name="nombre" required><br>
+  Apellido: <input type="text" name="apellido" required><br>
+  DNI/CPF: <input type="text" name="dni" required><br>
+  Teléfono: <input type="text" name="telefono"><br>
+  Email: <input type="email" name="email"><br>
+  Dirección: <input type="text" name="direccion"><br>
+  <button type="submit">Guardar</button>
+</form>
+{% if error %}
+<p style="color:red;">{{ error }}</p>
+{% endif %}
+</body>
+</html>

@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Panel del Administrador</title>
-</head>
+<html>
+<head><title>Panel Admin</title></head>
 <body>
-    <h2>Bienvenido al Panel del Administrador</h2>
-    <p>Sesión iniciada correctamente.</p>
-
-    <a href="{{ url_for('index') }}">Cerrar sesión</a>
+<h2>Panel de Administración</h2>
+<ul>
+  <li><a href="{{ url_for('nuevo_cliente') }}">Nuevo Cliente</a></li>
+  <li><a href="{{ url_for('lista_clientes') }}">Lista de Clientes</a></li>
+  <li><a href="{{ url_for('lista_reservas') }}">Lista de Reservas</a></li>
+  <li><a href="{{ url_for('logout') }}">Cerrar sesión</a></li>
+</ul>
 </body>
 </html>

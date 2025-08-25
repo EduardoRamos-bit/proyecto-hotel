@@ -1,7 +1,7 @@
 <h2>Habitaciones</h2>
 <table border="1">
   <tr>
-    <th>Número</th><th>Tipo</th><th>Precio por noche</th><th>Estado</th>
+    <th>Número</th><th>Tipo</th><th>Precio por noche</th><th>Estado</th><th>Disponibilidad</th>
   </tr>
   {% for hab in habitaciones %}
   <tr>
@@ -9,6 +9,15 @@
     <td>{{ hab.tipo }}</td>
     <td>${{ hab.precio_por_noche }}</td>
     <td>{{ hab.estado }}</td>
+    <td>
+        {% if hab.estado == 'ocupada' and hab.fecha_salida_ultima %}
+            Ocupada hasta {{ hab.fecha_salida_ultima }}
+        {% elif hab.estado == 'disponible' and hab.fecha_entrada_proxima %}
+            Disponible hasta {{ hab.fecha_entrada_proxima }}
+        {% else %}
+            Disponible
+        {% endif %}
+    </td>
   </tr>
   {% endfor %}
 </table>

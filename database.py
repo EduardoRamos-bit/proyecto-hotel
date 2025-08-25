@@ -80,24 +80,32 @@ def cambiar_estado_habitacion(id_habitacion, nuevo_estado):
 def reservar_habitacion(id_cliente, id_habitacion, fecha_entrada, fecha_salida):
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("SELECT estado FROM habitaciones WHERE id = %s", (id_habitacion,))
-    estado = cursor.fetchone()
-    if not estado or estado[0] != 'disponible':
+    try:
+        # Verificar si la habitación está disponible
+        cursor.execute("SELECT estado FROM habitaciones WHERE id = %s", (id_habitacion,))
+        estado = cursor.fetchone()
+        if not estado or estado[0] != 'disponible':
+            return False
+
+        # Insertar la reserva
+        sql = """
+            INSERT INTO reservas (id_cliente, id_habitacion, fecha_entrada, fecha_salida)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(sql, (id_cliente, id_habitacion, fecha_entrada, fecha_salida))
+
+        # Cambiar estado de la habitación (misma conexión)
+        cursor.execute("UPDATE habitaciones SET estado = 'ocupada' WHERE id = %s", (id_habitacion,))
+
+        conn.commit()
+        return True
+    except Exception as e:
+        print("Error en reservar_habitacion:", e)
+        conn.rollback()
+        return False
+    finally:
         cursor.close()
         conn.close()
-        return False
-
-    sql = """
-        INSERT INTO reservas (id_cliente, id_habitacion, fecha_entrada, fecha_salida)
-        VALUES (%s, %s, %s, %s)
-    """
-    cursor.execute(sql, (id_cliente, id_habitacion, fecha_entrada, fecha_salida))
-    cambiar_estado_habitacion(id_habitacion, 'ocupada')
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return True
 
 def listar_reservas():
     conn = conectar()
@@ -116,16 +124,57 @@ def listar_reservas():
 def listar_todas_habitaciones():
     conn = conectar()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM habitaciones ORDER BY numero_habitacion")
+    cursor.execute("""
+        SELECT h.*, 
+               r_ultima.fecha_salida AS fecha_salida_ultima,
+               r_proxima.fecha_entrada AS fecha_entrada_proxima
+        FROM habitaciones h
+        LEFT JOIN (
+            SELECT id_habitacion, MAX(fecha_salida) AS fecha_salida
+            FROM reservas
+            GROUP BY id_habitacion
+        ) r_ultima ON h.id = r_ultima.id_habitacion
+        LEFT JOIN (
+            SELECT id_habitacion, MIN(fecha_entrada) AS fecha_entrada
+            FROM reservas
+            WHERE fecha_entrada > NOW()
+            GROUP BY id_habitacion
+        ) r_proxima ON h.id = r_proxima.id_habitacion
+        ORDER BY h.numero_habitacion
+    """)
     habitaciones = cursor.fetchall()
     cursor.close()
     conn.close()
     return habitaciones
-
-def cambiar_estado_habitacion(id_habitacion, nuevo_estado):
+def extender_reserva(id_reserva, nueva_fecha_salida):
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("UPDATE habitaciones SET estado = %s WHERE id = %s", (nuevo_estado, id_habitacion))
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        # Obtener datos de la reserva actual
+        cursor.execute("SELECT id_habitacion, fecha_salida FROM reservas WHERE id = %s", (id_reserva,))
+        reserva = cursor.fetchone()
+        if not reserva:
+            return False
+
+        id_habitacion, fecha_salida_actual = reserva
+
+        # Verificar que no haya reservas futuras que choquen
+        cursor.execute("""
+            SELECT * FROM reservas
+            WHERE id_habitacion = %s AND fecha_entrada > %s AND fecha_entrada <= %s
+        """, (id_habitacion, fecha_salida_actual, nueva_fecha_salida))
+        conflicto = cursor.fetchone()
+        if conflicto:
+            return False  # No se puede extender, hay otra reserva
+
+        # Actualizar la fecha de salida
+        cursor.execute("UPDATE reservas SET fecha_salida = %s WHERE id = %s", (nueva_fecha_salida, id_reserva))
+        conn.commit()
+        return True
+    except Exception as e:
+        print("Error al extender reserva:", e)
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()

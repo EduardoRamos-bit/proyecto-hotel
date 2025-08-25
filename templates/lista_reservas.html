@@ -1,23 +1,33 @@
 <!DOCTYPE html>
-<html>
-<head><title>Lista de Reservas</title></head>
+<ht lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Reservas</title>
+</head>
 <body>
-<h2>Reservas</h2>
-<table border="1">
-  <tr>
-    <th>ID Reserva</th><th>Cliente</th><th>Habitación</th><th>Fecha Entrada</th><th>Fecha Salida</th><th>Estado</th>
-  </tr>
-  {% for r in reservas %}
-  <tr>
-    <td>{{ r.id }}</td>
-    <td>{{ r.nombre }} {{ r.apellido }}</td>
-    <td>{{ r.numero_habitacion }}</td>
-    <td>{{ r.fecha_entrada }}</td>
-    <td>{{ r.fecha_salida }}</td>
-    <td>{{ r.estado }}</td>
-  </tr>
-  {% endfor %}
-</table>
+    <h2>Reservas</h2>
+    <table border="1" cellpadding="5">
+        <thead>
+            <tr>
+                <th>ID Reserva</th>
+                <th>Cliente</th>
+                <th>Habitación</th>
+                <th>Fecha Entrada</th>
+                <th>Fecha Salida</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in reservas %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td>{{ r.nombre }} {{ r.apellido }}</td>
+                <td>{{ r.numero_habitacion }}</td>
+                <td>{{ r.fecha_entrada }}</td>
+                <td>{{ r.fecha_salida }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 <a href="{{ url_for('admin_panel') }}">Volver al Panel</a>
 </body>
 </html>

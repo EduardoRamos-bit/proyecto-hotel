@@ -118,5 +118,23 @@ def cambiar_estado_habitaciones():
 
     return render_template('cambiar_estado_habitaciones.html', habitaciones=habitaciones)
 
+@app.route('/reservas/extender/<int:id_reserva>', methods=['GET', 'POST'])
+def extender_reserva_ruta(id_reserva):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+
+    reserva = database.obtener_reserva(id_reserva)  # Necesitamos esta función
+
+    if request.method == 'POST':
+        nueva_fecha_salida = request.form['fecha_salida']
+        exito = database.extender_reserva(id_reserva, nueva_fecha_salida)
+        if exito:
+            return redirect(url_for('lista_reservas'))
+        else:
+            error = "No se puede extender la reserva, hay conflicto con otra reserva futura."
+            return render_template('extender_reserva.html', reserva=reserva, error=error)
+
+    return render_template('extender_reserva.html', reserva=reserva)
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -178,3 +178,4 @@ def extender_reserva(id_reserva, nueva_fecha_salida):
     finally:
         cursor.close()
         conn.close()
+    

@@ -5,7 +5,7 @@
 <h2>Clientes Registrados</h2>
 <table border="1">
   <tr>
-    <th>ID</th><th>Nombre</th><th>Apellido</th><th>DNI</th><th>Teléfono</th><th>Email</th><th>Dirección</th><th>Fecha Registro</th>
+    <th>ID</th><th>Nombre</th><th>Apellido</th><th>DNI</th><th>Teléfono</th><th>Email</th><th>Dirección</th><th>Fecha Registro</th><th>Fecha fecha_salida</th>
   </tr>
   {% for c in clientes %}
   <tr>
@@ -17,6 +17,7 @@
     <td>{{ c.email }}</td>
     <td>{{ c.direccion }}</td>
     <td>{{ c.fecha_registro }}</td>
+    <td>{{ c.fecha_salida }}</td>
   </tr>
   {% endfor %}
 </table>

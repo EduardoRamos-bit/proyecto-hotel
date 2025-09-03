@@ -135,6 +135,22 @@ def extender_reserva_ruta(id_reserva):
             return render_template('extender_reserva.html', reserva=reserva, error=error)
 
     return render_template('extender_reserva.html', reserva=reserva)
+@app.route('/modificar_precio', methods=['POST'])
+def modificar_precio():
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+
+    id_habitacion = request.form['id_habitacion']
+    precio_nuevo = request.form['precio_por_noche']
+
+    try:
+        precio_nuevo = float(precio_nuevo)
+        database.cambiar_precio_habitacion(id_habitacion, precio_nuevo)
+        flash('Precio actualizado correctamente', 'success')
+    except ValueError:
+        flash('El precio ingresado no es válido', 'error')
+
+    return redirect(url_for('lista_habitaciones'))
 
 if __name__ == '__main__':
     app.run(debug=True)

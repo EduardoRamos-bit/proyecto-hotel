@@ -1,45 +1,32 @@
-<!DOCTYPE html>
-<html>
-<head><title>Cambiar Estado Habitaciones</title></head>
-<body>
-<h2>Cambiar Estado de Habitaciones</h2>
-
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul style="color:green;">
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
-
-<table border="1" cellpadding="5" cellspacing="0">
+<h2>Habitaciones</h2>
+<table border="1">
   <tr>
-    <th>Número</th><th>Tipo</th><th>Estado Actual</th><th>Cambiar Estado</th>
+    <th>Número</th><th>Tipo</th><th>Precio por noche</th><th>Estado</th><th>Disponibilidad</th><th>Acción</th>
   </tr>
   {% for hab in habitaciones %}
   <tr>
     <td>{{ hab.numero_habitacion }}</td>
     <td>{{ hab.tipo }}</td>
+    <td>
+      <form action="{{ url_for('modificar_precio') }}" method="post">
+        <input type="hidden" name="id_habitacion" value="{{ hab.id }}">
+        <input type="number" name="precio_por_noche" value="{{ hab.precio_por_noche }}" step="0.01">
+    </td>
     <td>{{ hab.estado }}</td>
     <td>
-      <form method="post" style="margin:0;">
-        <input type="hidden" name="habitacion_id" value="{{ hab.id }}">
-        <select name="nuevo_estado" required>
-          <option value="disponible" {% if hab.estado == 'disponible' %}selected{% endif %}>Disponible</option>
-          <option value="ocupada" {% if hab.estado == 'ocupada' %}selected{% endif %}>Ocupada</option>
-          <option value="mantenimiento" {% if hab.estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
-        </select>
+        {% if hab.estado == 'ocupada' and hab.fecha_salida_ultima %}
+            Ocupada hasta {{ hab.fecha_salida_ultima }}
+        {% elif hab.estado == 'disponible' and hab.fecha_entrada_proxima %}
+            Disponible hasta {{ hab.fecha_entrada_proxima }}
+        {% else %}
+            Disponible
+        {% endif %}
+    </td>
+    <td>
         <button type="submit">Actualizar</button>
       </form>
     </td>
   </tr>
   {% endfor %}
 </table>
-
-<br>
 <a href="{{ url_for('admin_panel') }}">Volver al Panel</a>
-</body>
-</html>
-  

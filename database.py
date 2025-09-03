@@ -54,7 +54,12 @@ def obtener_cliente(id_cliente):
 def listar_clientes():
     conn = conectar()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM clientes")
+    cursor.execute("""
+        SELECT c.*, r.fecha_salida
+        FROM clientes c
+        LEFT JOIN reservas r ON c.id_cliente = r.id_cliente
+        ORDER BY c.id_cliente
+    """)
     clientes = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -178,4 +183,12 @@ def extender_reserva(id_reserva, nueva_fecha_salida):
     finally:
         cursor.close()
         conn.close()
+
+def cambiar_precio_habitacion(id_habitacion, nuevo_precio):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE habitaciones SET precio_por_noche = %s WHERE id = %s", (nuevo_precio, id_habitacion))
+    conn.commit()
+    cursor.close()
+    conn.close()
     

@@ -24,7 +24,7 @@
             <th>Tipo</th>
             <th>Precio por noche</th>
             <th>Estado</th>
-            <th>Disponibilidad</th>
+            <th>Reservas</th>
           </tr>
         </thead>
         <tbody>
@@ -35,12 +35,14 @@
             <td>${{ hab.precio_por_noche }}</td>
             <td>{{ hab.estado }}</td>
             <td>
-              {% if hab.estado == 'ocupada' and hab.fecha_salida_ultima %}
-                  Ocupada hasta {{ hab.fecha_salida_ultima }}
-              {% elif hab.estado == 'disponible' and hab.fecha_entrada_proxima %}
-                  Disponible hasta {{ hab.fecha_entrada_proxima }}
+              {% if hab.reservas %}
+                <ul class="mb-0">
+                  {% for r in hab.reservas %}
+                    <li>Ocupada: {{ r.fecha_entrada }} → {{ r.fecha_salida }}</li>
+                  {% endfor %}
+                </ul>
               {% else %}
-                  Disponible
+                Disponible
               {% endif %}
             </td>
           </tr>

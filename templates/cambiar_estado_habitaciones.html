@@ -7,8 +7,6 @@
 
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Tu CSS personalizado -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-light">
@@ -34,11 +32,17 @@
             <td>{{ hab.numero_habitacion }}</td>
             <td>{{ hab.tipo }}</td>
             <td>
-              <form action="{{ url_for('modificar_precio') }}" method="post" class="d-flex">
+              <form action="{{ url_for('modificar_precio') }}" method="post" class="d-flex align-items-center">
                 <input type="hidden" name="id_habitacion" value="{{ hab.id }}">
-                <input type="number" name="precio_por_noche" value="{{ hab.precio_por_noche }}" step="0.01" class="form-control me-2">
+                <input type="number" name="precio_por_noche" value="{{ hab.precio_por_noche }}" step="0.01" class="form-control me-2" style="width: 100px;">
             </td>
-            <td>{{ hab.estado }}</td>
+            <td>
+                <select name="nuevo_estado" class="form-select form-select-sm">
+                  <option value="disponible" {% if hab.estado == 'disponible' %}selected{% endif %}>Disponible</option>
+                  <option value="ocupada" {% if hab.estado == 'ocupada' %}selected{% endif %}>Ocupada</option>
+                  <option value="mantenimiento" {% if hab.estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+                </select>
+            </td>
             <td>
               {% if hab.estado == 'ocupada' and hab.fecha_salida_ultima %}
                   Ocupada hasta {{ hab.fecha_salida_ultima }}
@@ -63,7 +67,6 @@
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

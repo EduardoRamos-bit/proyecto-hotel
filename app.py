@@ -60,25 +60,54 @@ def nuevo_cliente():
     return render_template('nuevo_cliente.html')
 
 # RESERVAR HABITACION
+from datetime import datetime
+
 @app.route('/reservar/<int:id_cliente>', methods=['GET', 'POST'])
 def reservar_habitacion(id_cliente):
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
 
-    habitaciones = database.listar_habitaciones_disponibles()
+    habitaciones = []
+    error = None
+    dias = None
+    monto = None
 
     if request.method == 'POST':
-        id_habitacion = request.form['habitacion']
         fecha_entrada = request.form['fecha_entrada']
         fecha_salida = request.form['fecha_salida']
 
-        exito = database.reservar_habitacion(id_cliente, id_habitacion, fecha_entrada, fecha_salida)
-        if exito:
-            return redirect(url_for('lista_reservas'))
-        else:
-            return render_template('reservar_habitacion.html', habitaciones=habitaciones, error="Habitación no disponible")
+        try:
+            f1 = datetime.strptime(fecha_entrada, "%Y-%m-%d")
+            f2 = datetime.strptime(fecha_salida, "%Y-%m-%d")
+            dias = (f2 - f1).days
+            if dias <= 0:
+                raise ValueError("La fecha de salida debe ser mayor a la de entrada")
+        except Exception as e:
+            error = str(e)
+            return render_template('reservar_habitacion.html', habitaciones=[], error=error)
 
-    return render_template('reservar_habitacion.html', habitaciones=habitaciones)
+        # Si ya seleccionó habitación, confirmar reserva
+        if 'habitacion' in request.form:
+            id_habitacion = request.form['habitacion']
+            habitacion = database.obtener_habitacion(id_habitacion)
+            precio = habitacion['precio_por_noche']
+            monto = dias * precio
+
+            exito = database.reservar_habitacion(id_cliente, id_habitacion, fecha_entrada, fecha_salida, monto)
+            if exito:
+                flash(f"Reserva confirmada. Días: {dias}, Total: ${monto}")
+                return redirect(url_for('lista_reservas'))
+            else:
+                error = "Habitación no disponible"
+                # Si falla, recargar habitaciones disponibles para esas fechas
+                habitaciones = database.listar_habitaciones_disponibles(fecha_entrada, fecha_salida)
+        else:
+            # Solo buscar habitaciones disponibles
+            habitaciones = database.listar_habitaciones_disponibles(fecha_entrada, fecha_salida)
+
+    return render_template('reservar_habitacion.html', habitaciones=habitaciones, error=error, dias=dias, monto=monto)
+
+
 
 # LISTAR CLIENTES
 @app.route('/clientes')
@@ -135,6 +164,7 @@ def extender_reserva_ruta(id_reserva):
             return render_template('extender_reserva.html', reserva=reserva, error=error)
 
     return render_template('extender_reserva.html', reserva=reserva)
+
 @app.route('/modificar_precio', methods=['POST'])
 def modificar_precio():
     if not session.get('admin'):
@@ -142,15 +172,17 @@ def modificar_precio():
 
     id_habitacion = request.form['id_habitacion']
     precio_nuevo = request.form['precio_por_noche']
+    nuevo_estado = request.form['nuevo_estado']  # <-- obtenemos el nuevo estado
 
     try:
         precio_nuevo = float(precio_nuevo)
-        database.cambiar_precio_habitacion(id_habitacion, precio_nuevo)
-        flash('Precio actualizado correctamente', 'success')
+        database.cambiar_precio_y_estado_habitacion(id_habitacion, precio_nuevo, nuevo_estado)
+        flash('Precio y estado actualizados correctamente', 'success')
     except ValueError:
         flash('El precio ingresado no es válido', 'error')
 
     return redirect(url_for('lista_habitaciones'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

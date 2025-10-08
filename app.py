@@ -1,13 +1,6 @@
 from flask import Flask, flash, render_template, request, redirect, url_for, session
 from datetime import datetime
 import database
-import logging
-from decimal import Decimal
-
-
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_demo_2024'  # Cambiar en producción
@@ -44,31 +37,7 @@ def admin_login():
 def admin_panel():
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
-    
-    # Obtener estadísticas básicas
-    try:
-        # Limpieza automática: liberar habitaciones vencidas antes de calcular stats
-        try:
-            database.liberar_habitaciones_vencidas()
-        except Exception as _:
-            pass
-        clientes = database.listar_clientes()
-        reservas = database.listar_reservas()
-        habitaciones = database.listar_todas_habitaciones()
-        
-        stats = {
-            'total_clientes': len(clientes),
-            'total_reservas': len(reservas),
-            'total_habitaciones': len(habitaciones),
-            'habitaciones_disponibles': len([h for h in habitaciones if h['estado'] == 'disponible']),
-            'habitaciones_ocupadas': len([h for h in habitaciones if h['estado'] == 'ocupada'])
-        }
-        
-        return render_template('admin_panel.html', stats=stats)
-    except Exception as e:
-        logger.error(f"Error en panel admin: {e}")
-        flash("Error al cargar estadísticas", "error")
-        return render_template('admin_panel.html', stats={})
+    return render_template('admin_panel.html')
 
 # LOGOUT
 @app.route('/logout')
@@ -216,51 +185,15 @@ def lista_clientes():
 def lista_reservas():
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
-    
-    try:
-        try:
-            database.liberar_habitaciones_vencidas()
-        except Exception as _:
-            pass
-        reservas = database.listar_reservas_con_anticipos()
-        return render_template('lista_reservas.html', reservas=reservas)
-    except Exception as e:
-        logger.error(f"Error al listar reservas: {e}")
-        flash("Error al cargar lista de reservas", "error")
-        return render_template('lista_reservas.html', reservas=[])
-
-@app.route('/reservas/<int:id_reserva>/marcar_ocupada', methods=['POST'])
-def marcar_reserva_ocupada(id_reserva):
-    if not session.get('admin'):
-        return redirect(url_for('admin_login'))
-
-    try:
-        exito = database.marcar_reserva_y_habitacion_ocupada(id_reserva)
-        if exito:
-            flash('Reserva y habitación marcadas como ocupadas', 'success')
-        else:
-            flash('No se pudo marcar como ocupada', 'error')
-    except Exception as e:
-        logger.error(f"Error al marcar ocupada: {e}")
-        flash('Error interno', 'error')
-    return redirect(url_for('lista_reservas'))
+    reservas = database.listar_reservas()
+    return render_template('lista_reservas.html', reservas=reservas)
 
 @app.route('/habitaciones')
 def lista_habitaciones():
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
-    
-    try:
-        try:
-            database.liberar_habitaciones_vencidas()
-        except Exception as _:
-            pass
-        habitaciones = database.listar_todas_habitaciones()
-        return render_template('lista_habitaciones.html', habitaciones=habitaciones)
-    except Exception as e:
-        logger.error(f"Error al listar habitaciones: {e}")
-        flash("Error al cargar lista de habitaciones", "error")
-        return render_template('lista_habitaciones.html', habitaciones=[])
+    habitaciones = database.listar_todas_habitaciones()  # Función que lista todo sin filtro
+    return render_template('lista_habitaciones.html', habitaciones=habitaciones)
 
 @app.route('/habitaciones/estado', methods=['GET', 'POST'])
 def cambiar_estado_habitaciones():
@@ -270,29 +203,32 @@ def cambiar_estado_habitaciones():
     try:
         habitaciones = database.listar_todas_habitaciones()
 
-        if request.method == 'POST':
-            id_habitacion = request.form.get('habitacion_id', '').strip()
-            nuevo_estado = request.form.get('nuevo_estado', '').strip()
-            
-            if not id_habitacion or not nuevo_estado:
-                flash("Seleccione una habitación y un estado", "error")
-            else:
-                exito = database.cambiar_estado_habitacion(id_habitacion, nuevo_estado)
-                if exito:
-                    flash(f"Estado de habitación {id_habitacion} actualizado a {nuevo_estado}", "success")
-                else:
-                    flash("Error al actualizar el estado de la habitación", "error")
-            return redirect(url_for('cambiar_estado_habitaciones'))
+    if request.method == 'POST':
+        id_habitacion = request.form['habitacion_id']
+        nuevo_estado = request.form['nuevo_estado']
+        database.cambiar_estado_habitacion(id_habitacion, nuevo_estado)
+        flash(f"Estado de habitación {id_habitacion} actualizado a {nuevo_estado}.")
+        return redirect(url_for('cambiar_estado_habitaciones'))
 
-        # GET: renderizar la página con la lista
-        return render_template('cambiar_estado_habitaciones.html', habitaciones=habitaciones)
+    return render_template('cambiar_estado_habitaciones.html', habitaciones=habitaciones)
 
-    except Exception as e:
-        logger.error(f"Error en cambiar estado habitaciones: {e}")
-        flash("Error al cargar habitaciones", "error")
-        return render_template('cambiar_estado_habitaciones.html', habitaciones=[])
+@app.route('/reservas/extender/<int:id_reserva>', methods=['GET', 'POST'])
+def extender_reserva_ruta(id_reserva):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
 
-## Ruta de extender reserva eliminada a pedido: flujo de extensión deshabilitado
+    reserva = database.obtener_reserva(id_reserva)  # Necesitamos esta función
+
+    if request.method == 'POST':
+        nueva_fecha_salida = request.form['fecha_salida']
+        exito = database.extender_reserva(id_reserva, nueva_fecha_salida)
+        if exito:
+            return redirect(url_for('lista_reservas'))
+        else:
+            error = "No se puede extender la reserva, hay conflicto con otra reserva futura."
+            return render_template('extender_reserva.html', reserva=reserva, error=error)
+
+    return render_template('extender_reserva.html', reserva=reserva)
 
 @app.route('/modificar_precio', methods=['POST'])
 def modificar_precio():

@@ -475,6 +475,7 @@ def obtener_reserva(id_reserva):
         if conn:
             conn.close()
 
+<<<<<<< HEAD
 
 def marcar_reserva_y_habitacion_ocupada(id_reserva):
     """Marca la reserva como 'ocupada' y actualiza la habitación asociada a 'ocupada'.
@@ -513,6 +514,8 @@ def marcar_reserva_y_habitacion_ocupada(id_reserva):
         if conn:
             conn.close()
 
+=======
+>>>>>>> 2d47f5e02a159cd5177746f01b89d2d89bcb38bb
 def crear_anticipo(id_reserva, porcentaje_anticipo):
     """Crea un anticipo para una reserva"""
     conn = None
@@ -602,6 +605,7 @@ def listar_reservas_con_anticipos():
         if conn:
             conn.close()
     
+<<<<<<< HEAD
 def liberar_habitaciones_vencidas():
     """Libera habitaciones marcadas 'ocupada' cuyas reservas asociadas ya pasaron la fecha_salida.
 
@@ -651,3 +655,5 @@ def liberar_habitaciones_vencidas():
             cursor.close()
         if conn:
             conn.close()
+=======
+>>>>>>> 2d47f5e02a159cd5177746f01b89d2d89bcb38bb

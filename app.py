@@ -173,12 +173,32 @@ def lista_clientes():
         return redirect(url_for('admin_login'))
     
     try:
-        clientes = database.listar_clientes()
+        q = request.args.get('q', '').strip()
+        if q:
+            clientes = database.listar_clientes_filtrado(q)
+        else:
+            clientes = database.listar_clientes()
         return render_template('lista_clientes.html', clientes=clientes)
     except Exception as e:
         logger.error(f"Error al listar clientes: {e}")
         flash("Error al cargar lista de clientes", "error")
         return render_template('lista_clientes.html', clientes=[])
+
+@app.route('/reservas/<int:id_reserva>/cancelar', methods=['POST'])
+def cancelar_reserva(id_reserva):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+
+    try:
+        exito = database.cancelar_reserva(id_reserva)
+        if exito:
+            flash('Reserva cancelada y habitación liberada', 'success')
+        else:
+            flash('No se pudo cancelar la reserva', 'error')
+    except Exception as e:
+        logger.error(f"Error al cancelar reserva: {e}")
+        flash('Error interno', 'error')
+    return redirect(url_for('lista_reservas'))
 
 # LISTAR RESERVAS
 @app.route('/reservas')

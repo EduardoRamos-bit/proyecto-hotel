@@ -160,6 +160,46 @@ def listar_clientes():
         if conn:
             conn.close()
 
+def listar_clientes_filtrado(q):
+    """Lista clientes filtrando por nombre, apellido o DNI (case-insensitive)."""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        like = f"%{q}%"
+        cursor.execute("""
+            SELECT 
+                c.id_cliente,
+                c.nombre,
+                c.apellido,
+                c.dni_pasaporte_cpf,
+                c.telefono,
+                c.email,
+                c.direccion,
+                c.fecha_registro,
+                r.fecha_entrada,
+                r.fecha_salida,
+                r.monto,
+                r.estado as estado_reserva,
+                h.numero_habitacion,
+                h.tipo as tipo_habitacion
+            FROM clientes c
+            LEFT JOIN reservas r ON c.id_cliente = r.id_cliente AND r.estado IN ('confirmada','ocupada')
+            LEFT JOIN habitaciones h ON r.id_habitacion = h.id
+            WHERE c.nombre LIKE %s OR c.apellido LIKE %s OR c.dni_pasaporte_cpf LIKE %s
+            ORDER BY c.id_cliente, r.fecha_entrada DESC
+        """, (like, like, like))
+        return cursor.fetchall()
+    except mysql.connector.Error as e:
+        logger.error(f"Error al filtrar clientes: {e}")
+        return []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 def listar_habitaciones_disponibles(fecha_entrada, fecha_salida):
     """Lista habitaciones disponibles para un rango de fecha y hora"""
     conn = None
@@ -505,6 +545,35 @@ def marcar_reserva_y_habitacion_ocupada(id_reserva):
         return True
     except mysql.connector.Error as e:
         logger.error(f"Error al marcar reserva/habitación ocupada: {e}")
+        if conn:
+            conn.rollback()
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def cancelar_reserva(id_reserva):
+    """Cancela una reserva y libera la habitación asociada (estado 'disponible')."""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT id_habitacion FROM reservas WHERE id = %s", (id_reserva,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        id_habitacion = row[0]
+
+        cursor.execute("UPDATE reservas SET estado = 'cancelada' WHERE id = %s", (id_reserva,))
+        cursor.execute("UPDATE habitaciones SET estado = 'disponible' WHERE id = %s", (id_habitacion,))
+        conn.commit()
+        return True
+    except mysql.connector.Error as e:
+        logger.error(f"Error al cancelar reserva: {e}")
         if conn:
             conn.rollback()
         return False

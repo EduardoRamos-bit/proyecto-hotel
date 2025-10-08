@@ -81,13 +81,22 @@
                 <span class="badge bg-secondary">{{ r.estado_reserva|title }}</span>
               {% endif %}
             </td>
-            <td>
-              {% if r.estado_reserva == 'confirmada' %}
+            <td class="d-flex gap-2">
+              {% if r.estado_reserva in ['confirmada'] %}
                 <form method="post" action="{{ url_for('marcar_reserva_ocupada', id_reserva=r.id) }}" onsubmit="return confirm('¿Marcar reserva y habitación como ocupada?');">
                   <button type="submit" class="btn btn-sm btn-dark" title="Marcar Ocupada">
                     <i class="fas fa-person-booth"></i>
                   </button>
                 </form>
+                <form method="post" action="{{ url_for('cancelar_reserva', id_reserva=r.id) }}" onsubmit="return confirm('¿Cancelar la reserva y liberar la habitación?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                </form>
+              {% elif r.estado_reserva in ['ocupada'] %}
+                <span class="badge bg-dark">Ocupada</span>
+              {% elif r.estado_reserva in ['cancelada','finalizada'] %}
+                <span class="badge bg-secondary">{{ r.estado_reserva|title }}</span>
               {% else %}
                 <span class="text-muted">-</span>
               {% endif %}

@@ -475,44 +475,6 @@ def obtener_reserva(id_reserva):
         if conn:
             conn.close()
 
-
-def marcar_reserva_y_habitacion_ocupada(id_reserva):
-    """Marca la reserva como 'ocupada' y actualiza la habitación asociada a 'ocupada'.
-
-    Retorna True si ambas actualizaciones se realizaron correctamente, False en caso contrario.
-    """
-    conn = None
-    cursor = None
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
-
-        # Obtener la habitación asociada a la reserva
-        cursor.execute("SELECT id_habitacion FROM reservas WHERE id = %s", (id_reserva,))
-        row = cursor.fetchone()
-        if not row:
-            logger.warning(f"Reserva {id_reserva} no encontrada para marcar ocupada")
-            return False
-
-        id_habitacion = row[0]
-
-        # Actualizar estado de la reserva (si tiene columna estado) y la habitación
-        cursor.execute("UPDATE reservas SET estado = 'ocupada' WHERE id = %s", (id_reserva,))
-        cursor.execute("UPDATE habitaciones SET estado = 'ocupada' WHERE id = %s", (id_habitacion,))
-        conn.commit()
-        logger.info(f"Reserva {id_reserva} y habitación {id_habitacion} marcadas como ocupadas")
-        return True
-    except mysql.connector.Error as e:
-        logger.error(f"Error al marcar reserva/habitación ocupada: {e}")
-        if conn:
-            conn.rollback()
-        return False
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
 def crear_anticipo(id_reserva, porcentaje_anticipo):
     """Crea un anticipo para una reserva"""
     conn = None
@@ -602,52 +564,3 @@ def listar_reservas_con_anticipos():
         if conn:
             conn.close()
     
-def liberar_habitaciones_vencidas():
-    """Libera habitaciones marcadas 'ocupada' cuyas reservas asociadas ya pasaron la fecha_salida.
-
-    También marca esas reservas como 'finalizada'.
-    """
-    conn = None
-    cursor = None
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
-
-        # Seleccionar reservas ocupadas vencidas
-        cursor.execute("""
-            SELECT r.id, r.id_habitacion
-            FROM reservas r
-            WHERE r.estado = 'ocupada' AND r.fecha_salida <= NOW()
-        """)
-        rows = cursor.fetchall()
-        if not rows:
-            return 0
-
-        reserva_ids = [row[0] for row in rows]
-        habitacion_ids = [row[1] for row in rows]
-
-        # Marcar reservas como finalizadas
-        cursor.execute(
-            "UPDATE reservas SET estado = 'finalizada' WHERE id IN (" + ",".join(["%s"]*len(reserva_ids)) + ")",
-            reserva_ids
-        )
-
-        # Liberar habitaciones
-        cursor.execute(
-            "UPDATE habitaciones SET estado = 'disponible' WHERE id IN (" + ",".join(["%s"]*len(habitacion_ids)) + ")",
-            habitacion_ids
-        )
-
-        conn.commit()
-        logger.info(f"Liberadas {len(habitacion_ids)} habitaciones por reservas vencidas")
-        return len(habitacion_ids)
-    except mysql.connector.Error as e:
-        logger.error(f"Error al liberar habitaciones vencidas: {e}")
-        if conn:
-            conn.rollback()
-        return 0
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()

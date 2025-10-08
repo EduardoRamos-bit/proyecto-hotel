@@ -4,7 +4,6 @@ import database
 import logging
 from decimal import Decimal
 
-
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,11 +46,6 @@ def admin_panel():
     
     # Obtener estadísticas básicas
     try:
-        # Limpieza automática: liberar habitaciones vencidas antes de calcular stats
-        try:
-            database.liberar_habitaciones_vencidas()
-        except Exception as _:
-            pass
         clientes = database.listar_clientes()
         reservas = database.listar_reservas()
         habitaciones = database.listar_todas_habitaciones()
@@ -218,10 +212,6 @@ def lista_reservas():
         return redirect(url_for('admin_login'))
     
     try:
-        try:
-            database.liberar_habitaciones_vencidas()
-        except Exception as _:
-            pass
         reservas = database.listar_reservas_con_anticipos()
         return render_template('lista_reservas.html', reservas=reservas)
     except Exception as e:
@@ -229,32 +219,12 @@ def lista_reservas():
         flash("Error al cargar lista de reservas", "error")
         return render_template('lista_reservas.html', reservas=[])
 
-@app.route('/reservas/<int:id_reserva>/marcar_ocupada', methods=['POST'])
-def marcar_reserva_ocupada(id_reserva):
-    if not session.get('admin'):
-        return redirect(url_for('admin_login'))
-
-    try:
-        exito = database.marcar_reserva_y_habitacion_ocupada(id_reserva)
-        if exito:
-            flash('Reserva y habitación marcadas como ocupadas', 'success')
-        else:
-            flash('No se pudo marcar como ocupada', 'error')
-    except Exception as e:
-        logger.error(f"Error al marcar ocupada: {e}")
-        flash('Error interno', 'error')
-    return redirect(url_for('lista_reservas'))
-
 @app.route('/habitaciones')
 def lista_habitaciones():
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
     
     try:
-        try:
-            database.liberar_habitaciones_vencidas()
-        except Exception as _:
-            pass
         habitaciones = database.listar_todas_habitaciones()
         return render_template('lista_habitaciones.html', habitaciones=habitaciones)
     except Exception as e:
@@ -282,17 +252,52 @@ def cambiar_estado_habitaciones():
                     flash(f"Estado de habitación {id_habitacion} actualizado a {nuevo_estado}", "success")
                 else:
                     flash("Error al actualizar el estado de la habitación", "error")
-            return redirect(url_for('cambiar_estado_habitaciones'))
-
-        # GET: renderizar la página con la lista
-        return render_template('cambiar_estado_habitaciones.html', habitaciones=habitaciones)
+        return redirect(url_for('cambiar_estado_habitaciones'))
 
     except Exception as e:
         logger.error(f"Error en cambiar estado habitaciones: {e}")
         flash("Error al cargar habitaciones", "error")
         return render_template('cambiar_estado_habitaciones.html', habitaciones=[])
 
-## Ruta de extender reserva eliminada a pedido: flujo de extensión deshabilitado
+@app.route('/reservas/extender/<int:id_reserva>', methods=['GET', 'POST'])
+def extender_reserva_ruta(id_reserva):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+
+    try:
+        reserva = database.obtener_reserva(id_reserva)
+        if not reserva:
+            flash("Reserva no encontrada", "error")
+            return redirect(url_for('lista_reservas'))
+
+        if request.method == 'POST':
+            nueva_fecha_salida = request.form.get('fecha_salida', '').strip()
+            
+            if not nueva_fecha_salida:
+                return render_template('extender_reserva.html', reserva=reserva, error="Fecha de salida es obligatoria")
+            
+            try:
+                # Validar que la nueva fecha sea posterior a la actual
+                fecha_actual = datetime.strptime(reserva['fecha_salida'], "%Y-%m-%d %H:%M:%S")
+                nueva_fecha = datetime.strptime(nueva_fecha_salida, "%Y-%m-%dT%H:%M")
+                
+                if nueva_fecha <= fecha_actual:
+                    return render_template('extender_reserva.html', reserva=reserva, error="La nueva fecha debe ser posterior a la fecha actual de salida")
+                
+                exito = database.extender_reserva(id_reserva, nueva_fecha_salida)
+                if exito:
+                    flash(f"Reserva extendida hasta {nueva_fecha_salida}", "success")
+                    return redirect(url_for('lista_reservas'))
+                else:
+                    error = "No se puede extender la reserva, hay conflicto con otra reserva futura"
+                    return render_template('extender_reserva.html', reserva=reserva, error=error)
+            except ValueError:
+                return render_template('extender_reserva.html', reserva=reserva, error="Formato de fecha inválido")
+
+    except Exception as e:
+        logger.error(f"Error en extender reserva: {e}")
+        flash("Error al procesar la extensión de reserva", "error")
+        return redirect(url_for('lista_reservas'))
 
 @app.route('/modificar_precio', methods=['POST'])
 def modificar_precio():
@@ -327,29 +332,6 @@ def modificar_precio():
 
     return redirect(url_for('lista_habitaciones'))
 
-
-@app.route('/habitaciones/marcar_ocupada', methods=['POST'])
-def marcar_habitacion_ocupada():
-    if not session.get('admin'):
-        return redirect(url_for('admin_login'))
-
-    id_habitacion = request.form.get('id_habitacion', '').strip()
-    return_to = request.form.get('return_to') or url_for('lista_habitaciones')
-    if not id_habitacion:
-        flash('Habitación no especificada', 'error')
-        return redirect(return_to)
-
-    try:
-        exito = database.cambiar_estado_habitacion(id_habitacion, 'ocupada')
-        if exito:
-            flash(f"Habitación {id_habitacion} marcada como ocupada", 'success')
-        else:
-            flash('No se pudo actualizar el estado de la habitación', 'error')
-    except Exception as e:
-        logger.error(f"Error al marcar habitación ocupada: {e}")
-        flash('Error interno', 'error')
-
-    return redirect(return_to)
 
 if __name__ == '__main__':
     app.run(debug=True)

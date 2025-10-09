@@ -21,6 +21,22 @@
       <i class="fas fa-bed me-2"></i>Reservar Habitación
     </h2>
 
+<<<<<<< HEAD
+=======
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+    {% if mensajes %}
+    <div class="mb-3">
+      {% for categoria, mensaje in mensajes %}
+      <div class="alert alert-{{ 'success' if categoria=='success' else ('danger' if categoria=='error' else categoria) }} alert-dismissible fade show" role="alert">
+        {{ mensaje }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+>>>>>>> 723e7a05389b3a254d88ea6304aeea1b416eb9b2
     <!-- Información del cliente -->
     {% if cliente %}
     <div class="card bg-light mb-4">
@@ -91,6 +107,36 @@
           <i class="fas fa-info-circle"></i> 
           Monto total calculado automáticamente
         </div>
+<<<<<<< HEAD
+      </div>
+
+      <!-- Porcentaje de Anticipo -->
+      <div class="mb-3">
+        <label for="porcentaje_anticipo" class="form-label">Porcentaje de Anticipo</label>
+        <div class="input-group">
+          <input type="number" id="porcentaje_anticipo" name="porcentaje_anticipo" 
+                 class="form-control" min="0" max="100" step="0.01" value="30" required>
+          <span class="input-group-text">%</span>
+        </div>
+        <div class="form-text">
+          <i class="fas fa-info-circle"></i> 
+          Porcentaje que se debe abonar para confirmar la reserva
+        </div>
+      </div>
+
+      <!-- Monto de Anticipo -->
+      <div class="mb-3">
+        <label for="monto_anticipo" class="form-label">Monto de Anticipo a Pagar</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="text" id="monto_anticipo" name="monto_anticipo" class="form-control" readonly required>
+        </div>
+        <div class="form-text">
+          <i class="fas fa-info-circle"></i> 
+          Monto que debe abonar el cliente para confirmar la reserva
+        </div>
+=======
+>>>>>>> 723e7a05389b3a254d88ea6304aeea1b416eb9b2
       </div>
 
       <!-- Porcentaje de Anticipo -->
@@ -120,9 +166,16 @@
         </div>
       </div>
 
-      <!-- Botón de Reservar -->
-      <div class="d-grid">
-        <button type="submit" class="btn btn-primary">Reservar</button>
+      <!-- Acciones -->
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Reservar</button>
+        <form method="post" action="{{ url_for('marcar_habitacion_ocupada') }}" class="flex-fill">
+          <input type="hidden" name="id_habitacion" value="{{ request.form.habitacion or '' }}">
+          <input type="hidden" name="return_to" value="{{ url_for('reservar_habitacion', id_cliente=cliente.id_cliente) }}">
+          <button type="submit" class="btn btn-dark w-100" {% if not request.form.habitacion %}disabled{% endif %} title="Marcar habitación como ocupada">
+            Marcar ocupada
+          </button>
+        </form>
       </div>
 
       {% else %}

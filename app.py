@@ -199,39 +199,12 @@ def lista_clientes():
         return redirect(url_for('admin_login'))
     
     try:
-<<<<<<< HEAD
         clientes = database.listar_clientes()
-=======
-        q = request.args.get('q', '').strip()
-        if q:
-            clientes = database.listar_clientes_filtrado(q)
-        else:
-            clientes = database.listar_clientes()
->>>>>>> 723e7a05389b3a254d88ea6304aeea1b416eb9b2
         return render_template('lista_clientes.html', clientes=clientes)
     except Exception as e:
         logger.error(f"Error al listar clientes: {e}")
         flash("Error al cargar lista de clientes", "error")
         return render_template('lista_clientes.html', clientes=[])
-<<<<<<< HEAD
-=======
-
-@app.route('/reservas/<int:id_reserva>/cancelar', methods=['POST'])
-def cancelar_reserva(id_reserva):
-    if not session.get('admin'):
-        return redirect(url_for('admin_login'))
-
-    try:
-        exito = database.cancelar_reserva(id_reserva)
-        if exito:
-            flash('Reserva cancelada y habitación liberada', 'success')
-        else:
-            flash('No se pudo cancelar la reserva', 'error')
-    except Exception as e:
-        logger.error(f"Error al cancelar reserva: {e}")
-        flash('Error interno', 'error')
-    return redirect(url_for('lista_reservas'))
->>>>>>> 723e7a05389b3a254d88ea6304aeea1b416eb9b2
 
 # LISTAR RESERVAS
 @app.route('/reservas')
@@ -361,29 +334,6 @@ def modificar_precio():
 
     return redirect(url_for('lista_habitaciones'))
 
-
-@app.route('/habitaciones/marcar_ocupada', methods=['POST'])
-def marcar_habitacion_ocupada():
-    if not session.get('admin'):
-        return redirect(url_for('admin_login'))
-
-    id_habitacion = request.form.get('id_habitacion', '').strip()
-    return_to = request.form.get('return_to') or url_for('lista_habitaciones')
-    if not id_habitacion:
-        flash('Habitación no especificada', 'error')
-        return redirect(return_to)
-
-    try:
-        exito = database.cambiar_estado_habitacion(id_habitacion, 'ocupada')
-        if exito:
-            flash(f"Habitación {id_habitacion} marcada como ocupada", 'success')
-        else:
-            flash('No se pudo actualizar el estado de la habitación', 'error')
-    except Exception as e:
-        logger.error(f"Error al marcar habitación ocupada: {e}")
-        flash('Error interno', 'error')
-
-    return redirect(return_to)
 
 if __name__ == '__main__':
     app.run(debug=True)

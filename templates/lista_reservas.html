@@ -81,12 +81,39 @@
                 <span class="badge bg-secondary">{{ r.estado_reserva|title }}</span>
               {% endif %}
             </td>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> b1dfea5a3ad67c994e60f418a1049a1b607301a7
             <td>
               {% if r.estado_reserva == 'confirmada' %}
                 <a href="{{ url_for('extender_reserva_ruta', id_reserva=r.id) }}" 
                    class="btn btn-sm btn-warning" title="Extender Reserva">
                   <i class="fas fa-calendar-plus"></i>
                 </a>
+<<<<<<< HEAD
+=======
+=======
+            <td class="d-flex gap-2">
+              {% if r.estado_reserva in ['confirmada'] %}
+                <form method="post" action="{{ url_for('marcar_reserva_ocupada', id_reserva=r.id) }}" onsubmit="return confirm('¿Marcar reserva y habitación como ocupada?');">
+                  <button type="submit" class="btn btn-sm btn-dark" title="Marcar Ocupada">
+                    <i class="fas fa-person-booth"></i>
+                  </button>
+                </form>
+                <form method="post" action="{{ url_for('cancelar_reserva', id_reserva=r.id) }}" onsubmit="return confirm('¿Cancelar la reserva y liberar la habitación?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                </form>
+              {% elif r.estado_reserva in ['ocupada'] %}
+                <span class="badge bg-dark">Ocupada</span>
+              {% elif r.estado_reserva in ['cancelada','finalizada'] %}
+                <span class="badge bg-secondary">{{ r.estado_reserva|title }}</span>
+              {% else %}
+                <span class="text-muted">-</span>
+>>>>>>> 723e7a05389b3a254d88ea6304aeea1b416eb9b2
+>>>>>>> b1dfea5a3ad67c994e60f418a1049a1b607301a7
               {% endif %}
             </td>
           </tr>

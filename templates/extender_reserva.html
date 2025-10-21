@@ -46,7 +46,7 @@
         <label for="fecha_salida" class="form-label">
           <i class="fas fa-calendar me-2"></i>Nueva Fecha de Salida
         </label>
-        <input type="date" id="fecha_salida" name="fecha_salida" class="form-control" required>
+        <input type="datetime-local" id="fecha_salida" name="fecha_salida" class="form-control" required>
         <div class="form-text">La nueva fecha debe ser posterior a {{ reserva.fecha_salida }}</div>
       </div>
 
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Establecer la fecha mínima como el día siguiente a la fecha actual de salida
     const fechaMinima = new Date(fechaActual);
     fechaMinima.setDate(fechaMinima.getDate() + 1);
-    fechaSalida.min = fechaMinima.toISOString().split('T')[0];
+    fechaSalida.min = fechaMinima.toISOString().slice(0, 16);
 });
 </script>
 </body>

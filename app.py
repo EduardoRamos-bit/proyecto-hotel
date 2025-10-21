@@ -334,6 +334,62 @@ def modificar_precio():
 
     return redirect(url_for('lista_habitaciones'))
 
+# MARCAR RESERVA COMO OCUPADA
+@app.route('/reservas/marcar_ocupada/<int:id_reserva>', methods=['POST'])
+def marcar_reserva_ocupada(id_reserva):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        # Obtener información de la reserva
+        reserva = database.obtener_reserva(id_reserva)
+        if not reserva:
+            flash("Reserva no encontrada", "error")
+            return redirect(url_for('lista_reservas'))
+        
+        # Cambiar estado de la reserva a 'ocupada'
+        exito = database.cambiar_estado_reserva(id_reserva, 'ocupada')
+        if exito:
+            # Cambiar estado de la habitación a 'ocupada'
+            database.cambiar_estado_habitacion(reserva['id_habitacion'], 'ocupada')
+            flash(f"Reserva #{id_reserva} marcada como ocupada", "success")
+        else:
+            flash("Error al marcar la reserva como ocupada", "error")
+            
+    except Exception as e:
+        logger.error(f"Error al marcar reserva como ocupada: {e}")
+        flash("Error interno del servidor", "error")
+    
+    return redirect(url_for('lista_reservas'))
+
+# CANCELAR RESERVA
+@app.route('/reservas/cancelar/<int:id_reserva>', methods=['POST'])
+def cancelar_reserva(id_reserva):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        # Obtener información de la reserva
+        reserva = database.obtener_reserva(id_reserva)
+        if not reserva:
+            flash("Reserva no encontrada", "error")
+            return redirect(url_for('lista_reservas'))
+        
+        # Cambiar estado de la reserva a 'cancelada'
+        exito = database.cambiar_estado_reserva(id_reserva, 'cancelada')
+        if exito:
+            # Liberar la habitación (cambiar a 'disponible')
+            database.cambiar_estado_habitacion(reserva['id_habitacion'], 'disponible')
+            flash(f"Reserva #{id_reserva} cancelada y habitación liberada", "success")
+        else:
+            flash("Error al cancelar la reserva", "error")
+            
+    except Exception as e:
+        logger.error(f"Error al cancelar reserva: {e}")
+        flash("Error interno del servidor", "error")
+    
+    return redirect(url_for('lista_reservas'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

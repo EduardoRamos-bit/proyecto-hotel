@@ -120,9 +120,16 @@
         </div>
       </div>
 
-      <!-- Botón de Reservar -->
-      <div class="d-grid">
-        <button type="submit" class="btn btn-primary">Reservar</button>
+      <!-- Acciones -->
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Reservar</button>
+        <form method="post" action="{{ url_for('marcar_habitacion_ocupada') }}" class="flex-fill">
+          <input type="hidden" name="id_habitacion" value="{{ request.form.habitacion or '' }}">
+          <input type="hidden" name="return_to" value="{{ url_for('reservar_habitacion', id_cliente=cliente.id_cliente) }}">
+          <button type="submit" class="btn btn-dark w-100" {% if not request.form.habitacion %}disabled{% endif %} title="Marcar habitación como ocupada">
+            Marcar ocupada
+          </button>
+        </form>
       </div>
 
       {% else %}
@@ -167,6 +174,9 @@ function calcularMonto() {
     const salida = document.getElementById("fecha_salida").value;
     const hab = document.getElementById("habitacion");
     const precio = hab?.options[hab.selectedIndex]?.dataset.precio || 0;
+    const montoTotalInput = document.getElementById("monto_total");
+    const porcentajeInput = document.getElementById("porcentaje_anticipo");
+    const montoAnticipoInput = document.getElementById("monto_anticipo");
     const montoTotalInput = document.getElementById("monto_total");
     const porcentajeInput = document.getElementById("porcentaje_anticipo");
     const montoAnticipoInput = document.getElementById("monto_anticipo");

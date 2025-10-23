@@ -11,13 +11,13 @@ def conectar():
     """Establece conexión con la base de datos"""
     try:
         conn = mysql.connector.connect(
-            host='localhost',
-            user='root',         
-            password='',         
+        host='localhost',
+        user='root',         
+        password='',         
             database='hotel',
             charset='utf8mb4',
             collation='utf8mb4_general_ci'
-        )
+    )
         return conn
     except mysql.connector.Error as e:
         logger.error(f"Error de conexión a la base de datos: {e}")
@@ -450,28 +450,6 @@ def obtener_habitacion(id_habitacion):
         if conn:
             conn.close()
 
-def cambiar_estado_reserva(id_reserva, nuevo_estado):
-    """Cambia el estado de una reserva"""
-    conn = None
-    cursor = None
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE reservas SET estado = %s WHERE id = %s", (nuevo_estado, id_reserva))
-        conn.commit()
-        logger.info(f"Estado de reserva {id_reserva} cambiado a {nuevo_estado}")
-        return True
-    except mysql.connector.Error as e:
-        logger.error(f"Error al cambiar estado de reserva: {e}")
-        if conn:
-            conn.rollback()
-        return False
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-    
 def obtener_reserva(id_reserva):
     """Obtiene una reserva por su ID"""
     conn = None

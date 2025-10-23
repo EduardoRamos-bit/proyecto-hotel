@@ -35,13 +35,13 @@
               <form action="{{ url_for('modificar_precio') }}" method="post" class="d-flex align-items-center">
                 <input type="hidden" name="id_habitacion" value="{{ hab.id }}">
                 <input type="number" name="precio_por_noche" value="{{ hab.precio_por_noche }}" step="0.01" class="form-control me-2" style="width: 100px;">
-                <select name="nuevo_estado" class="form-select form-select-sm me-2">
+            </td>
+            <td>
+                <select name="nuevo_estado" class="form-select form-select-sm">
                   <option value="disponible" {% if hab.estado == 'disponible' %}selected{% endif %}>Disponible</option>
                   <option value="ocupada" {% if hab.estado == 'ocupada' %}selected{% endif %}>Ocupada</option>
                   <option value="mantenimiento" {% if hab.estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm">Actualizar</button>
-              </form>
             </td>
             <td>
               {% if hab.estado == 'ocupada' and hab.fecha_salida_ultima %}
@@ -53,9 +53,8 @@
               {% endif %}
             </td>
             <td>
-              <span class="badge bg-{% if hab.estado == 'disponible' %}success{% elif hab.estado == 'ocupada' %}danger{% else %}warning{% endif %}">
-                {{ hab.estado|title }}
-              </span>
+                <button type="submit" class="btn btn-primary btn-sm">Actualizar</button>
+              </form>
             </td>
           </tr>
           {% endfor %}

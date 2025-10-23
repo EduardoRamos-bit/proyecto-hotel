@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reservar Habitación</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center vh-100">
+
+<div class="container">
+  <div class="card shadow-lg p-4 rounded-4 mx-auto" style="max-width: 600px;">
+    <h2 class="text-center text-primary mb-4">
+      <i class="fas fa-bed me-2"></i>Reservar Habitación
+    </h2>
+
+<<<<<<< HEAD
+=======
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+    {% if mensajes %}
+    <div class="mb-3">
+      {% for categoria, mensaje in mensajes %}
+      <div class="alert alert-{{ 'success' if categoria=='success' else ('danger' if categoria=='error' else categoria) }} alert-dismissible fade show" role="alert">
+        {{ mensaje }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+>>>>>>> 723e7a05389b3a254d88ea6304aeea1b416eb9b2
+    <!-- Información del cliente -->
+    {% if cliente %}
+    <div class="card bg-light mb-4">
+      <div class="card-body">
+        <h6 class="card-title text-primary">Cliente</h6>
+        <p class="mb-1"><strong>Nombre:</strong> {{ cliente.nombre }} {{ cliente.apellido }}</p>
+        <p class="mb-1"><strong>DNI:</strong> {{ cliente.dni_pasaporte_cpf }}</p>
+        {% if cliente.telefono %}
+        <p class="mb-0"><strong>Teléfono:</strong> {{ cliente.telefono }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="post">
+      <!-- Fecha Entrada -->
+      <div class="mb-3">
+        <label for="fecha_entrada" class="form-label">Fecha y hora de Entrada</label>
+        <input type="datetime-local" id="fecha_entrada" name="fecha_entrada" class="form-control"
+               value="{{ request.form.fecha_entrada or '' }}" required>
+      </div>
+
+      <!-- Fecha Salida -->
+      <div class="mb-3">
+        <label for="fecha_salida" class="form-label">Fecha y hora de Salida</label>
+        <input type="datetime-local" id="fecha_salida" name="fecha_salida" class="form-control"
+               value="{{ request.form.fecha_salida or '' }}" required>
+      </div>
+
+      {% if habitaciones %}
+      <!-- Selección de Habitación -->
+      <div class="mb-3">
+        <label for="habitacion" class="form-label">Habitación</label>
+        <select id="habitacion" name="habitacion" class="form-select" required>
+          {% for hab in habitaciones %}
+            <option value="{{ hab.id }}" data-precio="{{ hab.precio_por_noche }}">
+              {{ hab.numero_habitacion }} - {{ hab.tipo }} - ${{ hab.precio_por_noche }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Método de Pago -->
+      <div class="mb-3">
+        <label for="metodo_pago" class="form-label">Método de Pago</label>
+        <select id="metodo_pago" name="metodo_pago" class="form-select" required>
+          <option value="" disabled selected>Seleccione un método</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="tarjeta">Tarjeta</option>
+          <option value="transferencia">Transferencia</option>
+        </select>
+      </div>
+
+      <!-- Cantidad de días -->
+      <div class="mb-3">
+        <label class="form-label">Cantidad de Días</label>
+        <input type="text" id="dias" class="form-control" readonly>
+      </div>
+
+      <!-- Monto Total -->
+      <div class="mb-3">
+        <label for="monto_total" class="form-label">Monto Total</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="text" id="monto_total" name="monto_total" class="form-control" readonly>
+        </div>
+        <div class="form-text">
+          <i class="fas fa-info-circle"></i> 
+          Monto total calculado automáticamente
+        </div>
+<<<<<<< HEAD
+      </div>
+
+      <!-- Porcentaje de Anticipo -->
+      <div class="mb-3">
+        <label for="porcentaje_anticipo" class="form-label">Porcentaje de Anticipo</label>
+        <div class="input-group">
+          <input type="number" id="porcentaje_anticipo" name="porcentaje_anticipo" 
+                 class="form-control" min="0" max="100" step="0.01" value="30" required>
+          <span class="input-group-text">%</span>
+        </div>
+        <div class="form-text">
+          <i class="fas fa-info-circle"></i> 
+          Porcentaje que se debe abonar para confirmar la reserva
+        </div>
+      </div>
+
+      <!-- Monto de Anticipo -->
+      <div class="mb-3">
+        <label for="monto_anticipo" class="form-label">Monto de Anticipo a Pagar</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="text" id="monto_anticipo" name="monto_anticipo" class="form-control" readonly required>
+        </div>
+        <div class="form-text">
+          <i class="fas fa-info-circle"></i> 
+          Monto que debe abonar el cliente para confirmar la reserva
+        </div>
+=======
+>>>>>>> 723e7a05389b3a254d88ea6304aeea1b416eb9b2
+      </div>
+
+      <!-- Porcentaje de Anticipo -->
+      <div class="mb-3">
+        <label for="porcentaje_anticipo" class="form-label">Porcentaje de Anticipo</label>
+        <div class="input-group">
+          <input type="number" id="porcentaje_anticipo" name="porcentaje_anticipo" 
+                 class="form-control" min="0" max="100" step="0.01" value="30" required>
+          <span class="input-group-text">%</span>
+        </div>
+        <div class="form-text">
+          <i class="fas fa-info-circle"></i> 
+          Porcentaje que se debe abonar para confirmar la reserva
+        </div>
+      </div>
+
+      <!-- Monto de Anticipo -->
+      <div class="mb-3">
+        <label for="monto_anticipo" class="form-label">Monto de Anticipo a Pagar</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="text" id="monto_anticipo" name="monto_anticipo" class="form-control" readonly required>
+        </div>
+        <div class="form-text">
+          <i class="fas fa-info-circle"></i> 
+          Monto que debe abonar el cliente para confirmar la reserva
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Reservar</button>
+        <form method="post" action="{{ url_for('marcar_habitacion_ocupada') }}" class="flex-fill">
+          <input type="hidden" name="id_habitacion" value="{{ request.form.habitacion or '' }}">
+          <input type="hidden" name="return_to" value="{{ url_for('reservar_habitacion', id_cliente=cliente.id_cliente) }}">
+          <button type="submit" class="btn btn-dark w-100" {% if not request.form.habitacion %}disabled{% endif %} title="Marcar habitación como ocupada">
+            Marcar ocupada
+          </button>
+        </form>
+      </div>
+
+      {% else %}
+      <!-- Buscar habitaciones disponibles -->
+      <div class="d-grid">
+        <button type="submit" class="btn btn-secondary">Buscar habitaciones disponibles</button>
+      </div>
+      {% endif %}
+    </form>
+
+    {% if error %}
+    <div class="alert alert-danger mt-3 text-center">
+      {{ error }}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Utilidades para minutos y días
+function diffEnDias(entradaIso, salidaIso) {
+    const inicio = new Date(entradaIso);
+    const fin = new Date(salidaIso);
+    const ms = fin - inicio;
+    return ms / (1000*60*60*24);
+}
+
+function setMinDatetimes() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const minValue = now.toISOString().slice(0,16);
+    const entrada = document.getElementById("fecha_entrada");
+    const salida = document.getElementById("fecha_salida");
+    if (entrada && !entrada.min) entrada.min = minValue;
+    if (salida && !salida.min) salida.min = minValue;
+}
+
+function calcularMonto() {
+    const entrada = document.getElementById("fecha_entrada").value;
+    const salida = document.getElementById("fecha_salida").value;
+    const hab = document.getElementById("habitacion");
+    const precio = hab?.options[hab.selectedIndex]?.dataset.precio || 0;
+    const montoTotalInput = document.getElementById("monto_total");
+    const porcentajeInput = document.getElementById("porcentaje_anticipo");
+    const montoAnticipoInput = document.getElementById("monto_anticipo");
+
+    if (entrada && salida) {
+        const dias = diffEnDias(entrada, salida);
+        if (dias > 0) {
+            document.getElementById("dias").value = Math.ceil(dias);
+            if (precio > 0) {
+                const montoTotal = Math.ceil(dias) * precio;
+                montoTotalInput.value = montoTotal.toFixed(2);
+                montoTotalInput.style.color = "#000";
+                montoTotalInput.style.fontWeight = "bold";
+                calcularAnticipo();
+            } else {
+                montoTotalInput.value = "";
+                montoAnticipoInput.value = "";
+            }
+        } else {
+            document.getElementById("dias").value = "";
+            montoTotalInput.value = "";
+            montoAnticipoInput.value = "";
+        }
+    }
+}
+
+function calcularAnticipo() {
+    const montoTotal = parseFloat(document.getElementById("monto_total").value) || 0;
+    const porcentaje = parseFloat(document.getElementById("porcentaje_anticipo").value) || 0;
+    const montoAnticipoInput = document.getElementById("monto_anticipo");
+    
+    if (montoTotal > 0 && porcentaje > 0) {
+        const anticipo = (montoTotal * porcentaje) / 100;
+        montoAnticipoInput.value = anticipo.toFixed(2);
+        montoAnticipoInput.style.color = "#28a745";
+        montoAnticipoInput.style.fontWeight = "bold";
+    } else {
+        montoAnticipoInput.value = "";
+    }
+}
+
+function calcularMontoConPrecioPromedio() {
+    const entrada = document.getElementById("fecha_entrada").value;
+    const salida = document.getElementById("fecha_salida").value;
+    const montoTotalInput = document.getElementById("monto_total");
+    const montoAnticipoInput = document.getElementById("monto_anticipo");
+
+    if (entrada && salida) {
+        const dias = diffEnDias(entrada, salida);
+        if (dias > 0) {
+            document.getElementById("dias").value = Math.ceil(dias);
+            const hab = document.getElementById("habitacion");
+            if (!hab || !hab.options[hab.selectedIndex]?.dataset.precio) {
+                const precioPromedio = 40000;
+                const montoEstimado = Math.ceil(dias) * precioPromedio;
+                montoTotalInput.value = `~${montoEstimado.toFixed(2)} (estimado)`;
+                montoTotalInput.style.color = "#6c757d";
+                montoTotalInput.style.fontStyle = "italic";
+                calcularAnticipoEstimado();
+            }
+        } else {
+            document.getElementById("dias").value = "";
+            montoTotalInput.value = "";
+            montoAnticipoInput.value = "";
+        }
+    }
+}
+
+function calcularAnticipoEstimado() {
+    const montoTotalText = document.getElementById("monto_total").value;
+    const porcentaje = parseFloat(document.getElementById("porcentaje_anticipo").value) || 0;
+    const montoAnticipoInput = document.getElementById("monto_anticipo");
+    
+    // Extraer el número del texto (remover ~ y (estimado))
+    const montoTotal = parseFloat(montoTotalText.replace(/[^\d.]/g, '')) || 0;
+    
+    if (montoTotal > 0 && porcentaje > 0) {
+        const anticipo = (montoTotal * porcentaje) / 100;
+        montoAnticipoInput.value = `~${anticipo.toFixed(2)} (estimado)`;
+        montoAnticipoInput.style.color = "#6c757d";
+        montoAnticipoInput.style.fontStyle = "italic";
+    } else {
+        montoAnticipoInput.value = "";
+    }
+}
+
+// Event listeners
+document.addEventListener("DOMContentLoaded", () => {
+    setMinDatetimes();
+});
+
+document.getElementById("fecha_entrada").addEventListener("change", function() {
+    const entrada = new Date(this.value);
+    const ahora = new Date();
+    if (entrada < ahora) {
+        alert("No se pueden hacer reservas para fecha y hora pasadas");
+        this.value = "";
+        document.getElementById("dias").value = "";
+        document.getElementById("monto_total").value = "";
+        return;
+    }
+    const salida = document.getElementById("fecha_salida");
+    if (salida && this.value) {
+        salida.min = this.value;
+    }
+    calcularMontoConPrecioPromedio();
+});
+
+document.getElementById("fecha_salida").addEventListener("change", function() {
+    const entrada = document.getElementById("fecha_entrada").value;
+    const salida = this.value;
+    if (entrada && salida) {
+        const d1 = new Date(entrada);
+        const d2 = new Date(salida);
+        if (d2 <= d1) {
+            alert("La salida debe ser posterior a la entrada");
+            this.value = "";
+            document.getElementById("dias").value = "";
+            document.getElementById("monto_total").value = "";
+            return;
+        }
+    }
+    calcularMontoConPrecioPromedio();
+});
+
+// Recalcular al cambiar habitación o porcentaje
+document.getElementById("habitacion")?.addEventListener("change", calcularMonto);
+
+document.getElementById("porcentaje_anticipo").addEventListener("input", function() {
+    if (document.getElementById("monto_total").value) {
+        if (document.getElementById("monto_total").value.includes("estimado")) {
+            calcularAnticipoEstimado();
+        } else {
+            calcularAnticipo();
+        }
+    }
+});
+</script>
+</body>
+</html>
+

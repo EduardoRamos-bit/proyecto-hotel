@@ -10,13 +10,18 @@
 
   <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-  <!-- Tu CSS personalizado -->
-  <link rel="stylesheet" href="styles.css">
+ 
 </head>
 <body class="bg-light">
 
   <div class="container mt-5">
+    {% with mensajes = get_flashed_messages(with_categories=True) %}
+      {% if mensajes %}
+        {% for cat, msg in mensajes %}
+          <div class="alert alert-{{ 'info' if cat=='message' else cat }} mt-3">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     <div class="card shadow-lg p-4 rounded-4">
       <h2 class="text-center text-primary mb-3">Clientes Registrados</h2>
 
@@ -45,97 +50,97 @@
         <thead class="table-dark">
           <tr>
             <th>ID</th>
-            <th>Cliente</th>
+              <th>Cliente</th>
             <th>DNI</th>
-            <th>Contacto</th>
+              <th>Contacto</th>
             <th>Dirección</th>
             <th>Fecha Registro</th>
-            <th>Reserva</th>
+              <th>Reserva</th>
             <th>Habitación</th>
-            <th>Monto</th>
-            <th>Estado</th>
-            <th>Acciones</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for c in clientes %}
           <tr>
-            <td><strong>#{{ c.id_cliente }}</strong></td>
-            <td>
-              <div>
-                <strong>{{ c.nombre }} {{ c.apellido }}</strong>
-              </div>
-            </td>
-            <td>{{ c.dni_pasaporte_cpf }}</td>
-            <td>
-              <div>
-                {% if c.telefono %}
-                  <small class="text-muted"><i class="fas fa-phone"></i> {{ c.telefono }}</small><br>
-                {% endif %}
-                {% if c.email %}
-                  <small class="text-muted"><i class="fas fa-envelope"></i> {{ c.email }}</small>
-                {% endif %}
-              </div>
-            </td>
-            <td>
-              {% if c.direccion %}
-                <small>{{ c.direccion }}</small>
-              {% else %}
-                <span class="text-muted">-</span>
-              {% endif %}
-            </td>
-            <td>
-              <small>{{ c.fecha_registro }}</small>
-            </td>
-            <td>
-              {% if c.fecha_entrada and c.fecha_salida %}
+              <td><strong>#{{ c.id_cliente }}</strong></td>
+              <td>
                 <div>
-                  <small><strong>Entrada:</strong> {{ c.fecha_entrada }}</small><br>
-                  <small><strong>Salida:</strong> {{ c.fecha_salida }}</small>
+                  <strong>{{ c.nombre }} {{ c.apellido }}</strong>
                 </div>
-              {% else %}
-                <span class="text-muted">Sin reserva</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if c.numero_habitacion %}
-                <span class="badge bg-info">{{ c.numero_habitacion }}</span><br>
-                <small class="text-muted">{{ c.tipo_habitacion|title }}</small>
-              {% else %}
-                <span class="text-muted">-</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if c.monto %}
-                <strong class="text-success">${{ "%.2f"|format(c.monto) }}</strong>
-              {% else %}
-                <span class="text-muted">-</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if c.estado_reserva %}
-                {% if c.estado_reserva == 'confirmada' %}
-                  <span class="badge bg-success">{{ c.estado_reserva|title }}</span>
-                {% elif c.estado_reserva == 'cancelada' %}
-                  <span class="badge bg-danger">{{ c.estado_reserva|title }}</span>
+              </td>
+            <td>{{ c.dni_pasaporte_cpf }}</td>
+              <td>
+                <div>
+                  {% if c.telefono %}
+                    <small class="text-muted"><i class="fas fa-phone"></i> {{ c.telefono }}</small><br>
+                  {% endif %}
+                  {% if c.email %}
+                    <small class="text-muted"><i class="fas fa-envelope"></i> {{ c.email }}</small>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                {% if c.direccion %}
+                  <small>{{ c.direccion }}</small>
                 {% else %}
-                  <span class="badge bg-secondary">{{ c.estado_reserva|title }}</span>
+                  <span class="text-muted">-</span>
                 {% endif %}
+              </td>
+              <td>
+                <small>{{ c.fecha_registro }}</small>
+              </td>
+              <td>
+                {% if c.fecha_entrada and c.fecha_salida %}
+                  <div>
+                    <small><strong>Entrada:</strong> {{ c.fecha_entrada }}</small><br>
+                    <small><strong>Salida:</strong> {{ c.fecha_salida }}</small>
+                  </div>
+                {% else %}
+                  <span class="text-muted">Sin reserva</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if c.numero_habitacion %}
+                  <span class="badge bg-info">{{ c.numero_habitacion }}</span><br>
+                  <small class="text-muted">{{ c.tipo_habitacion|title }}</small>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if c.monto %}
+                  <strong class="text-success">${{ "%.2f"|format(c.monto) }}</strong>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if c.estado_reserva %}
+                  {% if c.estado_reserva == 'confirmada' %}
+                    <span class="badge bg-success">{{ c.estado_reserva|title }}</span>
+                  {% elif c.estado_reserva == 'cancelada' %}
+                    <span class="badge bg-danger">{{ c.estado_reserva|title }}</span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ c.estado_reserva|title }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if c.fecha_entrada and c.fecha_salida %}
+                  <a href="{{ url_for('reservar_habitacion', id_cliente=c.id_cliente) }}" 
+                     class="btn btn-sm btn-primary" title="Nueva Reserva">
+                    <i class="fas fa-plus"></i>
+                  </a>
               {% else %}
-                <span class="text-muted">-</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if c.fecha_entrada and c.fecha_salida %}
-                <a href="{{ url_for('reservar_habitacion', id_cliente=c.id_cliente) }}" 
-                   class="btn btn-sm btn-primary" title="Nueva Reserva">
-                  <i class="fas fa-plus"></i>
-                </a>
-              {% else %}
-                <a href="{{ url_for('reservar_habitacion', id_cliente=c.id_cliente) }}" 
-                   class="btn btn-sm btn-success" title="Hacer Reserva">
-                  <i class="fas fa-bed"></i>
-                </a>
+                  <a href="{{ url_for('reservar_habitacion', id_cliente=c.id_cliente) }}" 
+                     class="btn btn-sm btn-success" title="Hacer Reserva">
+                    <i class="fas fa-bed"></i>
+                  </a>
               {% endif %}
             </td>
           </tr>

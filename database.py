@@ -2,6 +2,8 @@ import mysql.connector
 from datetime import datetime
 import logging
 from decimal import Decimal
+import os
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -11,12 +13,11 @@ def conectar():
     """Establece conexión con la base de datos"""
     try:
         conn = mysql.connector.connect(
-            host='localhost',
-            user='root',         
-            password='',         
-            database='hotel',
-            charset='utf8mb4',
-            collation='utf8mb4_general_ci'
+            host=os.getenv('DB_HOST', 'localhost'),
+            user=os.getenv('DB_USER', 'root'),
+            password=os.getenv('DB_PASSWORD', ''),
+            database=os.getenv('DB_NAME', 'hotel'),
+            charset='utf8mb4'
         )
         return conn
     except mysql.connector.Error as e:
@@ -24,16 +25,25 @@ def conectar():
         raise
 
 def check_admin_credentials(username, password):
-    """Verifica las credenciales del administrador"""
+    """Verifica las credenciales del administrador (hash compatible)."""
     conn = None
     cursor = None
     try:
         conn = conectar()
         cursor = conn.cursor(dictionary=True)
-        query = "SELECT * FROM admins WHERE username = %s AND password = %s"
-        cursor.execute(query, (username, password))
+        query = "SELECT * FROM admins WHERE username = %s"
+        cursor.execute(query, (username,))
         admin = cursor.fetchone()
-        return admin
+        if not admin:
+            return None
+        stored = admin.get('password')
+        # Compatibilidad: si el almacenado parece hash, validar con hash; si no, comparar plano
+        if stored and stored.startswith(('pbkdf2:', 'scrypt:', 'argon2:', 'sha256$', 'pbkdf2:sha256')):
+            if check_password_hash(stored, password):
+                return admin
+            return None
+        else:
+            return admin if stored == password else None
     except mysql.connector.Error as e:
         logger.error(f"Error al verificar credenciales: {e}")
         return None
@@ -43,6 +53,134 @@ def check_admin_credentials(username, password):
         if conn:
             conn.close()
 
+def listar_pagos_por_reserva(id_reserva):
+    """Lista pagos (monto, metodo_pago, fecha_pago) para una reserva."""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT monto, metodo_pago, fecha_pago FROM pagos WHERE id_reserva = %s ORDER BY fecha_pago, id",
+            (id_reserva,)
+        )
+        return cursor.fetchall()
+    except mysql.connector.Error as e:
+        logger.error(f"Error al listar pagos: {e}")
+        return []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def registrar_pago(id_reserva, monto, metodo_pago, fecha_pago=None):
+    """Registra un pago asociado a una reserva."""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+        if fecha_pago is None:
+            cursor.execute(
+                "INSERT INTO pagos (id_reserva, monto, fecha_pago, metodo_pago) VALUES (%s, %s, CURDATE(), %s)",
+                (id_reserva, monto, metodo_pago)
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO pagos (id_reserva, monto, fecha_pago, metodo_pago) VALUES (%s, %s, %s, %s)",
+                (id_reserva, monto, fecha_pago, metodo_pago)
+            )
+        conn.commit()
+        logger.info(f"Pago registrado para reserva {id_reserva} por ${monto}")
+        return True
+    except mysql.connector.Error as e:
+        logger.error(f"Error al registrar pago: {e}")
+        if conn:
+            conn.rollback()
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def obtener_reserva_activa_por_habitacion(id_habitacion):
+    """Obtiene la reserva actual/próxima de una habitación, con datos de cliente:
+    1) Prioriza una 'ocupada' vigente (fecha_salida >= NOW()).
+    2) Si no hay vigente, toma la última 'ocupada' (más reciente) como fallback.
+    3) Si no hay 'ocupada', toma una 'confirmada' vigente.
+    """
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        # 1) Ocupada vigente
+        cursor.execute(
+            """
+            SELECT r.*, c.nombre, c.apellido, c.dni_pasaporte_cpf, c.telefono, c.email, c.direccion,
+                   h.numero_habitacion, h.tipo
+            FROM reservas r
+            JOIN clientes c ON r.id_cliente = c.id_cliente
+            JOIN habitaciones h ON r.id_habitacion = h.id
+            WHERE r.id_habitacion = %s
+              AND r.estado = 'ocupada'
+              AND r.fecha_salida >= NOW()
+            ORDER BY r.fecha_entrada DESC
+            LIMIT 1
+            """,
+            (id_habitacion,)
+        )
+        reserva = cursor.fetchone()
+        if reserva:
+            return reserva
+
+        # 2) Última ocupada (más reciente) como fallback
+        cursor.execute(
+            """
+            SELECT r.*, c.nombre, c.apellido, c.dni_pasaporte_cpf, c.telefono, c.email, c.direccion,
+                   h.numero_habitacion, h.tipo
+            FROM reservas r
+            JOIN clientes c ON r.id_cliente = c.id_cliente
+            JOIN habitaciones h ON r.id_habitacion = h.id
+            WHERE r.id_habitacion = %s
+              AND r.estado = 'ocupada'
+            ORDER BY r.fecha_entrada DESC
+            LIMIT 1
+            """,
+            (id_habitacion,)
+        )
+        reserva = cursor.fetchone()
+        if reserva:
+            return reserva
+
+        # 3) Confirmada vigente (próxima)
+        cursor.execute(
+            """
+            SELECT r.*, c.nombre, c.apellido, c.dni_pasaporte_cpf, c.telefono, c.email, c.direccion,
+                   h.numero_habitacion, h.tipo
+            FROM reservas r
+            JOIN clientes c ON r.id_cliente = c.id_cliente
+            JOIN habitaciones h ON r.id_habitacion = h.id
+            WHERE r.id_habitacion = %s
+              AND r.estado = 'confirmada'
+              AND r.fecha_salida >= NOW()
+            ORDER BY r.fecha_entrada
+            LIMIT 1
+            """,
+            (id_habitacion,)
+        )
+        return cursor.fetchone()
+    except mysql.connector.Error as e:
+        logger.error(f"Error al obtener reserva activa por habitación: {e}")
+        return None
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 def create_admin(username, password):
     """Crea un nuevo administrador si no existe"""
     conn = None
@@ -52,7 +190,8 @@ def create_admin(username, password):
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM admins WHERE username = %s", (username,))
         if cursor.fetchone() is None:
-            cursor.execute("INSERT INTO admins (username, password) VALUES (%s, %s)", (username, password))
+            hashed = generate_password_hash(password)
+            cursor.execute("INSERT INTO admins (username, password) VALUES (%s, %s)", (username, hashed))
             conn.commit()
             return True
         return False
@@ -186,7 +325,7 @@ def listar_habitaciones_disponibles(fecha_entrada, fecha_salida):
         WHERE h.id NOT IN (
             SELECT r.id_habitacion
             FROM reservas r
-            WHERE r.estado = 'confirmada'
+            WHERE r.estado IN ('confirmada', 'ocupada')
               AND NOT (r.fecha_salida <= %s OR r.fecha_entrada >= %s)
         )
         AND h.estado = 'disponible'
@@ -239,16 +378,16 @@ def reservar_habitacion(id_cliente, id_habitacion, fecha_entrada, fecha_salida, 
     try:
         conn = conectar()
         cursor = conn.cursor()
-        
+
         fecha_entrada_dt = datetime.strptime(fecha_entrada, "%Y-%m-%dT%H:%M")
         fecha_salida_dt = datetime.strptime(fecha_salida, "%Y-%m-%dT%H:%M")
-        
+
         # Verificar solapamiento con reservas confirmadas (por datetime)
         cursor.execute("""
             SELECT 1 
             FROM reservas 
             WHERE id_habitacion = %s
-              AND estado = 'confirmada'
+              AND estado IN ('confirmada', 'ocupada')
               AND NOT (fecha_salida <= %s OR fecha_entrada >= %s)
         """, (id_habitacion, fecha_entrada_dt, fecha_salida_dt))
         conflicto = cursor.fetchone()
@@ -263,19 +402,17 @@ def reservar_habitacion(id_cliente, id_habitacion, fecha_entrada, fecha_salida, 
             logger.warning(f"Habitación {id_habitacion} no está disponible")
             return False
 
-        # Insertar reserva con datetime
+        # Insertar reserva con estado inicial 'confirmada' (según enum de la tabla)
         cursor.execute("""
             INSERT INTO reservas (id_cliente, id_habitacion, fecha_entrada, fecha_salida, monto, estado)
-            VALUES (%s, %s, %s, %s, %s, 'confirmada')
-        """, (id_cliente, id_habitacion, fecha_entrada_dt, fecha_salida_dt, monto))
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (id_cliente, id_habitacion, fecha_entrada_dt, fecha_salida_dt, monto, 'confirmada'))
         reserva_id = cursor.lastrowid
 
-        # No cambiar estado de la habitación a 'ocupada' hasta el check-in efectivo
-        # Se mantiene 'disponible' hasta que llegue la hora de entrada
-
         conn.commit()
-        logger.info(f"Reserva creada para habitación {id_habitacion}, cliente {id_cliente}, reserva {reserva_id}")
+        logger.info(f"Reserva creada correctamente (ID: {reserva_id}) para habitación {id_habitacion}")
         return reserva_id
+
     except mysql.connector.Error as e:
         logger.error(f"Error al reservar habitación: {e}")
         if conn:
@@ -329,15 +466,24 @@ def listar_todas_habitaciones():
         habitaciones = cursor.fetchall()
         
         for hab in habitaciones:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT fecha_entrada, fecha_salida, estado
                 FROM reservas
                 WHERE id_habitacion = %s
                   AND fecha_salida >= NOW()
                   AND estado = 'confirmada'
                 ORDER BY fecha_entrada
-            """, (hab['id'],))
+                """,
+                (hab['id'],)
+            )
             hab['reservas'] = cursor.fetchall()
+            # Agregar la reserva actual (confirmada/ocupada con salida >= NOW()) con datos de cliente
+            try:
+                reserva_actual = obtener_reserva_activa_por_habitacion(hab['id'])
+            except Exception:
+                reserva_actual = None
+            hab['reserva_actual'] = reserva_actual
         
         return habitaciones
     except mysql.connector.Error as e:
@@ -404,21 +550,32 @@ def extender_reserva(id_reserva, nueva_fecha_salida):
         if conn:
             conn.close()
 
-def cambiar_precio_y_estado_habitacion(id_habitacion, precio, estado):
-    """Cambia el precio y estado de una habitación"""
+def cambiar_precio_y_estado_habitacion(id_habitacion, precio, estado, cantidad_camas=None):
+    """Cambia el precio, estado y cantidad de camas de una habitación"""
     conn = None
     cursor = None
     try:
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE habitaciones
-            SET precio_por_noche = %s,
-                estado = %s
-            WHERE id = %s
-        """, (precio, estado, id_habitacion))
+        
+        if cantidad_camas is not None:
+            cursor.execute("""
+                UPDATE habitaciones
+                SET precio_por_noche = %s,
+                    estado = %s,
+                    cantidad_camas = %s
+                WHERE id = %s
+            """, (precio, estado, cantidad_camas, id_habitacion))
+        else:
+            cursor.execute("""
+                UPDATE habitaciones
+                SET precio_por_noche = %s,
+                    estado = %s
+                WHERE id = %s
+            """, (precio, estado, id_habitacion))
+        
         conn.commit()
-        logger.info(f"Precio y estado de habitación {id_habitacion} actualizados")
+        logger.info(f"Precio, estado y camas de habitación {id_habitacion} actualizados")
         return True
     except mysql.connector.Error as e:
         logger.error(f"Error al actualizar habitación: {e}")
@@ -586,3 +743,102 @@ def listar_reservas_con_anticipos():
         if conn:
             conn.close()
     
+def reserva_tiene_acompanantes(id_reserva):
+    """Devuelve True si la reserva tiene acompañantes cargados"""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(1) FROM acompanantes WHERE id_reserva = %s", (id_reserva,))
+        count = cursor.fetchone()[0]
+        return count and count > 0
+    except mysql.connector.Error as e:
+        logger.error(f"Error al verificar acompañantes: {e}")
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def guardar_acompanantes(id_reserva, acompanantes):
+    """Guarda una lista de acompañantes [{'nombre': str, 'dni': str}] para la reserva"""
+    if not acompanantes:
+        return True
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+        for a in acompanantes:
+            nombre = (a.get('nombre') or '').strip()
+            dni = (a.get('dni') or '').strip()
+            if not nombre or not dni:
+                continue
+            cursor.execute(
+                "INSERT INTO acompanantes (id_reserva, nombre, dni) VALUES (%s, %s, %s)",
+                (id_reserva, nombre, dni)
+            )
+        conn.commit()
+        logger.info(f"Acompañantes guardados para reserva {id_reserva}")
+        return True
+    except mysql.connector.Error as e:
+        logger.error(f"Error al guardar acompañantes: {e}")
+        if conn:
+            conn.rollback()
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def listar_acompanantes(id_reserva):
+    """Lista acompañantes de una reserva"""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, nombre, dni FROM acompanantes WHERE id_reserva = %s ORDER BY id", (id_reserva,))
+        return cursor.fetchall()
+    except mysql.connector.Error as e:
+        logger.error(f"Error al listar acompañantes: {e}")
+        return []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def liberar_reservas_vencidas():
+    """Libera habitaciones cuyas reservas ocupadas o confirmadas ya vencieron (fecha_salida <= NOW())."""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+        # Finalizar reservas vencidas y liberar habitación
+        cursor.execute("""
+            SELECT id, id_habitacion FROM reservas 
+            WHERE fecha_salida <= NOW() AND estado IN ('confirmada','ocupada')
+        """)
+        filas = cursor.fetchall()
+        for res_id, hab_id in filas:
+            cursor.execute("UPDATE reservas SET estado = 'cancelada' WHERE id = %s", (res_id,))
+            cursor.execute("UPDATE habitaciones SET estado = 'disponible' WHERE id = %s", (hab_id,))
+        conn.commit()
+        if filas:
+            logger.info(f"Liberadas {len(filas)} reservas vencidas")
+        return True
+    except mysql.connector.Error as e:
+        logger.error(f"Error al liberar reservas vencidas: {e}")
+        if conn:
+            conn.rollback()
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()

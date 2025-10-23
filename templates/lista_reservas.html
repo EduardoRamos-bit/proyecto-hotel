@@ -10,13 +10,18 @@
   
   <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-  <!-- Tu CSS personalizado -->
-  <link rel="stylesheet" href="styles.css">
+ 
 </head>
 <body class="bg-light">
 
   <div class="container mt-5">
+    {% with mensajes = get_flashed_messages(with_categories=True) %}
+      {% if mensajes %}
+        {% for cat, msg in mensajes %}
+          <div class="alert alert-{{ 'info' if cat=='message' else cat }} mt-3">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     <div class="card shadow-lg p-4 rounded-4">
       <h2 class="text-center text-primary mb-4">Reservas</h2>
 
@@ -87,6 +92,9 @@
                    class="btn btn-sm btn-warning" title="Extender Reserva">
                   <i class="fas fa-calendar-plus"></i>
                 </a>
+                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalAcompanantes{{ r.id }}" title="Cargar Acompañantes">
+                  <i class="fas fa-users"></i>
+                </button>
                 <form method="post" action="{{ url_for('marcar_reserva_ocupada', id_reserva=r.id) }}" onsubmit="return confirm('¿Marcar reserva y habitación como ocupada?');">
                   <button type="submit" class="btn btn-sm btn-dark" title="Marcar Ocupada">
                     <i class="fas fa-person-booth"></i>
@@ -106,6 +114,40 @@
               {% endif %}
             </td>
           </tr>
+          <!-- Modal acompañantes -->
+          <div class="modal fade" id="modalAcompanantes{{ r.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="post" action="{{ url_for('marcar_reserva_ocupada', id_reserva=r.id) }}">
+                  <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-users me-2"></i>Acompañantes de la Reserva #{{ r.id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="mb-2">
+                      <small class="text-muted">Ingrese Nombre y DNI de cada acompañante (opcional)</small>
+                    </div>
+                    {% for i in range(1,5) %}
+                    <div class="row g-2 align-items-end mb-2">
+                      <div class="col">
+                        <label class="form-label mb-0">Nombre</label>
+                        <input type="text" class="form-control" name="acomp_nombre_{{ i }}" placeholder="Nombre">
+                      </div>
+                      <div class="col">
+                        <label class="form-label mb-0">DNI</label>
+                        <input type="text" class="form-control" name="acomp_dni_{{ i }}" placeholder="DNI">
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Guardar y Marcar Ocupada</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
           {% endfor %}
         </tbody>
       </table>

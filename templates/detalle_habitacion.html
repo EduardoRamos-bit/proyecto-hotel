@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalle de Habitación</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <div class="card shadow-lg p-4 rounded-4">
+      <h3 class="text-center text-primary mb-4">Detalles de la Habitación {{ habitacion.numero_habitacion }}</h3>
+
+      <h5>Información de la habitación</h5>
+      <p><strong>Tipo:</strong> {{ habitacion.tipo }}</p>
+      <p><strong>Precio por noche:</strong> ${{ habitacion.precio_por_noche }}</p>
+      <p><strong>Estado actual:</strong> {{ habitacion.estado }}</p>
+
+      {% if reserva %}
+      <hr>
+      <h5>Reserva actual</h5>
+      <p><strong>Entrada:</strong> {{ reserva.fecha_entrada }}</p>
+      <p><strong>Salida:</strong> {{ reserva.fecha_salida }}</p>
+      <p><strong>Estado:</strong> {{ reserva.estado }}</p>
+
+      {% if cliente %}
+      <hr>
+      <h5>Cliente principal</h5>
+      <ul>
+        <li><strong>Nombre:</strong> {{ cliente.nombre }} {{ cliente.apellido }}</li>
+        <li><strong>DNI:</strong> {{ cliente.dni }}</li>
+        <li><strong>Teléfono:</strong> {{ cliente.telefono }}</li>
+        <li><strong>Email:</strong> {{ cliente.email }}</li>
+        <li><strong>Dirección:</strong> {{ cliente.direccion }}</li>
+      </ul>
+      {% endif %}
+
+      {% if acompanantes %}
+      <hr>
+      <h5>Acompañantes</h5>
+      <ul>
+        {% for a in acompanantes %}
+          <li>{{ a.nombre }} - DNI: {{ a.dni }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <hr>
+      <h5>Pagos</h5>
+      {% if pagos and pagos|length > 0 %}
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+          <thead>
+            <tr>
+              <th>Método</th>
+              <th>Fecha</th>
+              <th class="text-end">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in pagos %}
+            <tr>
+              <td>{{ p.metodo_pago|title }}</td>
+              <td>{{ p.fecha_pago }}</td>
+              <td class="text-end">${{ "%.2f"|format(p.monto) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="2" class="text-end">Total Pagado</th>
+              <th class="text-end">${{ "%.2f"|format(total_pagado) }}</th>
+            </tr>
+            <tr>
+              <th colspan="2" class="text-end">Saldo Restante</th>
+              <th class="text-end">${{ "%.2f"|format(saldo_restante or 0) }}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-muted">No hay pagos registrados. {% if reserva.monto_anticipo %}(Anticipo registrado: ${{ "%.2f"|format(reserva.monto_anticipo) }}){% endif %}</p>
+        <p><strong>Total Pagado:</strong> ${{ "%.2f"|format(total_pagado or 0) }}</p>
+        <p><strong>Saldo Restante:</strong> ${{ "%.2f"|format(saldo_restante or 0) }}</p>
+      {% endif %}
+      {% else %}
+      <div class="alert alert-info mt-3">Esta habitación no tiene una reserva activa.</div>
+      {% endif %}
+
+      <div class="text-center mt-4">
+        <a href="{{ url_for('lista_habitaciones') }}" class="btn btn-secondary">Volver</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

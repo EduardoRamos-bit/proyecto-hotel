@@ -10,13 +10,18 @@
   
   <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-  <!-- Tu CSS personalizado -->
-  <link rel="stylesheet" href="styles.css">
+ 
 </head>
 <body class="bg-light">
 
   <div class="container mt-5">
+    {% with mensajes = get_flashed_messages(with_categories=True) %}
+      {% if mensajes %}
+        {% for cat, msg in mensajes %}
+          <div class="alert alert-{{ 'info' if cat=='message' else cat }} mt-3">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     <!-- Estadísticas -->
     {% if stats %}
     <div class="row mb-4">

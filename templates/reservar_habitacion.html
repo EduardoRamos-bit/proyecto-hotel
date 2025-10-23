@@ -11,11 +11,17 @@
   <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-light d-flex align-items-center justify-content-center vh-100">
 
 <div class="container">
+  {% with mensajes = get_flashed_messages(with_categories=True) %}
+    {% if mensajes %}
+      {% for cat, msg in mensajes %}
+        <div class="alert alert-{{ 'info' if cat=='message' else cat }} mt-3">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
   <div class="card shadow-lg p-4 rounded-4 mx-auto" style="max-width: 600px;">
     <h2 class="text-center text-primary mb-4">
       <i class="fas fa-bed me-2"></i>Reservar Habitación
@@ -56,8 +62,8 @@
         <label for="habitacion" class="form-label">Habitación</label>
         <select id="habitacion" name="habitacion" class="form-select" required>
           {% for hab in habitaciones %}
-            <option value="{{ hab.id }}" data-precio="{{ hab.precio_por_noche }}">
-              {{ hab.numero_habitacion }} - {{ hab.tipo }} - ${{ hab.precio_por_noche }}
+            <option value="{{ hab.id }}" data-precio="{{ hab.precio_por_noche }}" data-camas="{{ hab.cantidad_camas or 1 }}">
+              {{ hab.numero_habitacion }} - {{ hab.tipo }} - {{ hab.cantidad_camas or 1 }} cama(s) - ${{ hab.precio_por_noche }}
             </option>
           {% endfor %}
         </select>
@@ -120,16 +126,20 @@
         </div>
       </div>
 
+      <!-- Información de Capacidad -->
+      <div class="mb-3">
+        <div class="alert alert-info">
+          <i class="fas fa-bed me-2"></i>
+          <strong>Capacidad de la Habitación:</strong> <span id="capacidad-info">Seleccione una habitación</span>
+        </div>
+      </div>
+
       <!-- Acciones -->
       <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary flex-fill">Reservar</button>
-        <form method="post" action="{{ url_for('marcar_habitacion_ocupada') }}" class="flex-fill">
-          <input type="hidden" name="id_habitacion" value="{{ request.form.habitacion or '' }}">
-          <input type="hidden" name="return_to" value="{{ url_for('reservar_habitacion', id_cliente=cliente.id_cliente) }}">
-          <button type="submit" class="btn btn-dark w-100" {% if not request.form.habitacion %}disabled{% endif %} title="Marcar habitación como ocupada">
+        <button type="button" class="btn btn-dark w-100" disabled title="Función no disponible en este formulario">
             Marcar ocupada
           </button>
-        </form>
       </div>
 
       {% else %}
@@ -174,9 +184,13 @@ function calcularMonto() {
     const salida = document.getElementById("fecha_salida").value;
     const hab = document.getElementById("habitacion");
     const precio = hab?.options[hab.selectedIndex]?.dataset.precio || 0;
+    const camas = hab?.options[hab.selectedIndex]?.dataset.camas || 1;
     const montoTotalInput = document.getElementById("monto_total");
     const porcentajeInput = document.getElementById("porcentaje_anticipo");
     const montoAnticipoInput = document.getElementById("monto_anticipo");
+
+    // Actualizar información de capacidad
+    updateCapacidadInfo(camas);
 
     if (entrada && salida) {
         const dias = diffEnDias(entrada, salida);
@@ -197,6 +211,13 @@ function calcularMonto() {
             montoTotalInput.value = "";
             montoAnticipoInput.value = "";
         }
+    }
+}
+
+function updateCapacidadInfo(camas) {
+    const capacidadInfo = document.getElementById("capacidad-info");
+    if (capacidadInfo) {
+        capacidadInfo.innerHTML = `${camas} cama(s) - Capacidad máxima: ${camas} persona(s)`;
     }
 }
 

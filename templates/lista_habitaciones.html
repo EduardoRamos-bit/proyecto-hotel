@@ -7,13 +7,18 @@
 
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Tu CSS personalizado -->
-  <link rel="stylesheet" href="styles.css">
+ 
 </head>
 <body class="bg-light">
 
   <div class="container mt-5">
+    {% with mensajes = get_flashed_messages(with_categories=True) %}
+      {% if mensajes %}
+        {% for cat, msg in mensajes %}
+          <div class="alert alert-{{ 'info' if cat=='message' else cat }} mt-3">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     <div class="card shadow-lg p-4 rounded-4">
       <h2 class="text-center text-primary mb-4">Habitaciones</h2>
 
@@ -30,19 +35,27 @@
         <tbody>
           {% for hab in habitaciones %}
           <tr>
-            <td>{{ hab.numero_habitacion }}</td>
+            <td><a href="{{ url_for('detalle_habitacion_ruta', id_habitacion=hab.id) }}">{{ hab.numero_habitacion }}</a></td>
             <td>{{ hab.tipo }}</td>
             <td>${{ hab.precio_por_noche }}</td>
             <td>{{ hab.estado }}</td>
             <td>
-              {% if hab.reservas %}
+              {% if hab.estado == 'ocupada' and hab.reserva_actual %}
+                <div>
+                  <div><strong>Huésped:</strong> {{ hab.reserva_actual.nombre }} {{ hab.reserva_actual.apellido }} <small class="text-muted">({{ hab.reserva_actual.dni_pasaporte_cpf }})</small></div>
+                  <div><small><strong>Tel.:</strong> {{ hab.reserva_actual.telefono or '-' }} | <strong>Email:</strong> {{ hab.reserva_actual.email or '-' }}</small></div>
+                  <div><small><strong>Entrada:</strong> {{ hab.reserva_actual.fecha_entrada }}</small></div>
+                  <div><small><strong>Salida:</strong> {{ hab.reserva_actual.fecha_salida }}</small></div>
+                  <div><span class="badge bg-dark">{{ hab.reserva_actual.estado|title }}</span></div>
+                </div>
+              {% elif hab.reservas %}
                 <ul class="mb-0">
                   {% for r in hab.reservas %}
-                    <li>Ocupada: {{ r.fecha_entrada }} → {{ r.fecha_salida }}</li>
+                    <li>Reserva: {{ r.fecha_entrada }} → {{ r.fecha_salida }}</li>
                   {% endfor %}
                 </ul>
               {% else %}
-                Disponible
+                <span class="text-muted">Sin reservas</span>
               {% endif %}
             </td>
           </tr>

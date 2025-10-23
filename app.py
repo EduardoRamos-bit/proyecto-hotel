@@ -2,7 +2,7 @@ from flask import Flask, flash, render_template, request, redirect, url_for, ses
 from datetime import datetime
 import database
 import logging
-from decimal import Decimal
+import os
 
 
 # Configurar logging
@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = 'clave_secreta_demo_2024'  # Cambiar en producción
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'clave_secreta_demo_2024')  # Cambiar en producción
 
 @app.route('/')
 def index():
@@ -47,6 +47,11 @@ def admin_panel():
     
     # Obtener estadísticas básicas
     try:
+        # Liberar automáticamente reservas vencidas y habitaciones asociadas
+        try:
+            database.liberar_reservas_vencidas()
+        except Exception as _:
+            pass
         clientes = database.listar_clientes()
         reservas = database.listar_reservas()
         habitaciones = database.listar_todas_habitaciones()
@@ -103,7 +108,24 @@ def nuevo_cliente():
         try:
             id_cliente = database.agregar_cliente(nombre, apellido, dni, telefono, email, direccion)
             if id_cliente:
-                flash(f"Cliente {nombre} {apellido} registrado correctamente", "success")
+                # Procesar acompañantes si existen
+                acompanantes = []
+                for key, value in request.form.items():
+                    if key.startswith('acompanante_nombre_'):
+                        idx = key.replace('acompanante_nombre_', '')
+                        nombre_acomp = value.strip()
+                        apellido_acomp = request.form.get(f'acompanante_apellido_{idx}', '').strip()
+                        dni_acomp = request.form.get(f'acompanante_dni_{idx}', '').strip()
+                        if nombre_acomp and apellido_acomp and dni_acomp:
+                            acompanantes.append({
+                                'nombre': f"{nombre_acomp} {apellido_acomp}",
+                                'dni': dni_acomp
+                            })
+                
+                if acompanantes:
+                    flash(f"Cliente {nombre} {apellido} registrado correctamente con {len(acompanantes)} acompañante(s)", "success")
+                else:
+                    flash(f"Cliente {nombre} {apellido} registrado correctamente", "success")
                 return redirect(url_for('reservar_habitacion', id_cliente=id_cliente))
             else:
                 return render_template('nuevo_cliente.html', error="Error al guardar cliente. Verifique que el DNI no esté duplicado")
@@ -175,6 +197,13 @@ def reservar_habitacion(id_cliente):
                 if reserva_id:
                     anticipo_info = database.crear_anticipo(reserva_id, porcentaje_anticipo)
                     if anticipo_info:
+                        # Registrar pago del anticipo si se indicó método de pago
+                        metodo_pago = request.form.get('metodo_pago', '').strip()
+                        try:
+                            if metodo_pago:
+                                database.registrar_pago(reserva_id, float(anticipo_info['monto_anticipo']), metodo_pago)
+                        except Exception as _:
+                            pass
                         flash(f"Reserva confirmada para {cliente['nombre']} {cliente['apellido']}. Días: {dias}, Total: ${monto_total:,.2f}, Anticipo: ${monto_anticipo:,.2f} ({porcentaje_anticipo}%)", "success")
                     else:
                         flash(f"Reserva confirmada para {cliente['nombre']} {cliente['apellido']}. Días: {dias}, Total: ${monto_total:,.2f}", "success")
@@ -250,6 +279,17 @@ def cambiar_estado_habitaciones():
             else:
                 exito = database.cambiar_estado_habitacion(id_habitacion, nuevo_estado)
                 if exito:
+                    # Si se marca como ocupada desde aquí, sincronizar la reserva activa y redirigir al detalle
+                    if nuevo_estado == 'ocupada':
+                        try:
+                            reserva_activa = database.obtener_reserva_activa_por_habitacion(id_habitacion)
+                            if reserva_activa and reserva_activa.get('estado') == 'confirmada':
+                                database.cambiar_estado_reserva(reserva_activa['id'], 'ocupada')
+                            flash(f"Habitación {id_habitacion} ocupada. Cargando detalle para gestionar datos de la reserva.", "success")
+                            return redirect(url_for('detalle_habitacion_ruta', id_habitacion=id_habitacion))
+                        except Exception as _:
+                            # Si falla la carga de la reserva, al menos mantener el cambio de estado
+                            pass
                     flash(f"Estado de habitación {id_habitacion} actualizado a {nuevo_estado}", "success")
                 else:
                     flash("Error al actualizar el estado de la habitación", "error")
@@ -310,6 +350,7 @@ def modificar_precio():
         id_habitacion = request.form.get('id_habitacion', '').strip()
         precio_nuevo = request.form.get('precio_por_noche', '').strip()
         nuevo_estado = request.form.get('nuevo_estado', '').strip()
+        cantidad_camas = request.form.get('cantidad_camas', '').strip()
 
         if not id_habitacion or not precio_nuevo or not nuevo_estado:
             flash('Todos los campos son obligatorios', 'error')
@@ -320,9 +361,31 @@ def modificar_precio():
             flash('El precio debe ser mayor a 0', 'error')
             return redirect(url_for('lista_habitaciones'))
 
-        exito = database.cambiar_precio_y_estado_habitacion(id_habitacion, precio_nuevo, nuevo_estado)
+        # Validar cantidad de camas si se proporciona
+        cantidad_camas_int = None
+        if cantidad_camas:
+            try:
+                cantidad_camas_int = int(cantidad_camas)
+                if cantidad_camas_int <= 0:
+                    flash('La cantidad de camas debe ser mayor a 0', 'error')
+                    return redirect(url_for('lista_habitaciones'))
+            except ValueError:
+                flash('La cantidad de camas debe ser un número válido', 'error')
+                return redirect(url_for('lista_habitaciones'))
+
+        exito = database.cambiar_precio_y_estado_habitacion(id_habitacion, precio_nuevo, nuevo_estado, cantidad_camas_int)
         if exito:
-            flash('Precio y estado actualizados correctamente', 'success')
+            # Si el nuevo estado es ocupada, sincronizar la reserva activa (confirmada -> ocupada) y llevar al detalle
+            if nuevo_estado == 'ocupada':
+                try:
+                    reserva_activa = database.obtener_reserva_activa_por_habitacion(id_habitacion)
+                    if reserva_activa and reserva_activa.get('estado') == 'confirmada':
+                        database.cambiar_estado_reserva(reserva_activa['id'], 'ocupada')
+                    flash('Habitación marcada como ocupada. Redirigiendo al detalle para gestionar datos.', 'success')
+                    return redirect(url_for('detalle_habitacion_ruta', id_habitacion=id_habitacion))
+                except Exception as _:
+                    pass
+            flash('Precio, estado y camas actualizados correctamente', 'success')
         else:
             flash('Error al actualizar la habitación', 'error')
             
@@ -347,6 +410,21 @@ def marcar_reserva_ocupada(id_reserva):
             flash("Reserva no encontrada", "error")
             return redirect(url_for('lista_reservas'))
         
+        # Si la reserva no tiene acompañantes y vienen del formulario, guardarlos
+        acompanantes = []
+        if request.form:
+            # Recoger pares nombre/dni dinámicos: acomp_nombre_1, acomp_dni_1, ...
+            for key, value in request.form.items():
+                if key.startswith('acomp_nombre_'):
+                    idx = key.replace('acomp_nombre_', '')
+                    nombre = value.strip()
+                    dni = request.form.get(f'acomp_dni_{idx}', '').strip()
+                    if nombre and dni:
+                        acompanantes.append({'nombre': nombre, 'dni': dni})
+
+        if acompanantes:
+            database.guardar_acompanantes(id_reserva, acompanantes)
+
         # Cambiar estado de la reserva a 'ocupada'
         exito = database.cambiar_estado_reserva(id_reserva, 'ocupada')
         if exito:
@@ -390,6 +468,64 @@ def cancelar_reserva(id_reserva):
     
     return redirect(url_for('lista_reservas'))
 
+
+@app.route('/habitaciones/detalle/<int:id_habitacion>')
+def detalle_habitacion_ruta(id_habitacion):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+
+    try:
+        habitacion = database.obtener_habitacion(id_habitacion)
+        if not habitacion:
+            flash("Habitación no encontrada", "error")
+            return redirect(url_for('lista_habitaciones'))
+
+        # ✅ Nueva lógica: solo reserva si está ocupada y no confirmada
+        reserva = database.obtener_reserva_activa_por_habitacion(id_habitacion)
+
+        cliente = None
+        acompanantes = []
+        pagos = []
+        total_pagado = 0.0
+        saldo_restante = None
+
+        if reserva:
+            cliente = {
+                'nombre': reserva.get('nombre'),
+                'apellido': reserva.get('apellido'),
+                'dni': reserva.get('dni_pasaporte_cpf'),
+                'telefono': reserva.get('telefono'),
+                'email': reserva.get('email'),
+                'direccion': reserva.get('direccion')
+            }
+            try:
+                acompanantes = database.listar_acompanantes(reserva['id'])
+            except Exception:
+                acompanantes = []
+            try:
+                pagos = database.listar_pagos_por_reserva(reserva['id']) or []
+                total_pagado = sum(float(p.get('monto') or 0) for p in pagos)
+                if total_pagado == 0 and reserva.get('monto_anticipo') is not None:
+                    total_pagado += float(reserva.get('monto_anticipo') or 0)
+                saldo_restante = max(0.0, float(reserva.get('monto') or 0) - total_pagado)
+            except Exception:
+                pagos = []
+
+        return render_template(
+            'detalle_habitacion.html',
+            habitacion=habitacion,
+            reserva=reserva,
+            cliente=cliente,
+            acompanantes=acompanantes,
+            pagos=pagos,
+            total_pagado=total_pagado,
+            saldo_restante=saldo_restante
+        )
+
+    except Exception as e:
+        logger.error(f"Error en detalle de habitación: {e}")
+        flash("Error al cargar detalle de habitación", "error")
+        return redirect(url_for('lista_habitaciones'))
 
 if __name__ == '__main__':
     app.run(debug=True)

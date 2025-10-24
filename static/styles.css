@@ -6,14 +6,17 @@ body {
 /* ===== ESTILOS PARA PÁGINA DE BIENVENIDA ===== */
 
 /* Fondo con imagen del hotel */
-body {
-  background-image: url("C:\Users\Public\PROYECTO HOTEL\FONDO HOTEL.png"); /* Ruta de la imagen */
-  background-size: cover; /* Ajusta la imagen para cubrir toda la pantalla */
-  background-position: center; /* Centra la imagen */
-  background-repeat: no-repeat; /* Evita que se repita */
-  background-attachment: fixed; /* Hace que el fondo quede fijo al hacer scroll */
+.welcome-body {
+  background: linear-gradient(135deg, rgba(0, 20, 40, 0.9), rgba(0, 40, 80, 0.8)), 
+              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23001a2e;stop-opacity:1" /><stop offset="50%" style="stop-color:%23002a4e;stop-opacity:1" /><stop offset="100%" style="stop-color:%23001a2e;stop-opacity:1" /></linearGradient></defs><rect width="1200" height="800" fill="url(%23bg)"/><g fill="none" stroke="%23d4af37" stroke-width="2" opacity="0.3"><path d="M0,400 Q300,200 600,400 T1200,400"/><path d="M0,600 Q400,300 800,600 T1200,600"/><path d="M0,200 Q200,100 400,200 T800,200 T1200,200"/></g></svg>');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  position: relative;
 }
-
 
 /* Overlay para mejorar legibilidad */
 .welcome-overlay {

@@ -14,7 +14,11 @@ app.secret_key = 'clave_secreta_demo_2024'  # Cambiar en producción
 
 @app.route('/')
 def index():
-    return redirect(url_for('admin_login'))
+    return render_template('welcome.html')
+
+@app.route('/welcome')
+def welcome():
+    return render_template('welcome.html')
 
 # LOGIN ADMIN
 @app.route('/admin_login', methods=['GET', 'POST'])

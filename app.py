@@ -14,7 +14,11 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'clave_secreta_demo_2024')  # Cam
 
 @app.route('/')
 def index():
-    return redirect(url_for('admin_login'))
+    return render_template('welcome.html')
+
+@app.route('/welcome')
+def welcome():
+    return render_template('welcome.html')
 
 # LOGIN ADMIN
 @app.route('/admin_login', methods=['GET', 'POST'])

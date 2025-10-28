@@ -1,0 +1,231 @@
+/* Fuentes globales */
+body {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ===== ESTILOS PARA PÁGINA DE BIENVENIDA ===== */
+
+/* Fondo con imagen del hotel */
+.welcome-body {
+  background: linear-gradient(135deg, rgba(0, 20, 40, 0.9), rgba(0, 40, 80, 0.8)), 
+              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23001a2e;stop-opacity:1" /><stop offset="50%" style="stop-color:%23002a4e;stop-opacity:1" /><stop offset="100%" style="stop-color:%23001a2e;stop-opacity:1" /></linearGradient></defs><rect width="1200" height="800" fill="url(%23bg)"/><g fill="none" stroke="%23d4af37" stroke-width="2" opacity="0.3"><path d="M0,400 Q300,200 600,400 T1200,400"/><path d="M0,600 Q400,300 800,600 T1200,600"/><path d="M0,200 Q200,100 400,200 T800,200 T1200,200"/></g></svg>');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* Overlay para mejorar legibilidad */
+.welcome-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    rgba(0, 20, 40, 0.7) 0%, 
+    rgba(0, 40, 80, 0.6) 50%, 
+    rgba(0, 20, 40, 0.8) 100%);
+  z-index: 1;
+}
+
+/* Contenido principal */
+.welcome-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Logo del hotel */
+.hotel-logo {
+  font-size: 4rem;
+  color: #d4af37;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
+  to { text-shadow: 0 0 30px rgba(212, 175, 55, 0.8), 0 0 40px rgba(212, 175, 55, 0.3); }
+}
+
+/* Título principal */
+.hotel-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #d4af37;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+}
+
+/* Subtítulo */
+.hotel-subtitle {
+  font-size: 1.3rem;
+  color: #ffffff;
+  font-weight: 300;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+/* Tarjeta de bienvenida */
+.welcome-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.welcome-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #d4af37, #f4d03f, #d4af37);
+}
+
+/* Título de la tarjeta */
+.welcome-card .card-title {
+  color: #2c3e50;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+/* Texto de la tarjeta */
+.welcome-card .card-text {
+  color: #5a6c7d;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* Grid de características */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  background: rgba(212, 175, 55, 0.2);
+  transform: translateY(-2px);
+}
+
+.feature-item i {
+  font-size: 2rem;
+  color: #d4af37;
+  margin-bottom: 0.5rem;
+}
+
+.feature-item span {
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Botón de bienvenida */
+.btn-welcome {
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  border: none;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 12px 30px;
+  border-radius: 50px;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.btn-welcome:hover {
+  background: linear-gradient(135deg, #f4d03f, #d4af37);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+  color: #2c3e50;
+}
+
+/* Footer de bienvenida */
+.welcome-footer {
+  position: relative;
+  z-index: 2;
+}
+
+.footer-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 300;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .hotel-title {
+    font-size: 2.5rem;
+  }
+  
+  .hotel-logo {
+    font-size: 3rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .welcome-card .card-body {
+    padding: 2rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .hotel-title {
+    font-size: 2rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .welcome-card .card-body {
+    padding: 1.5rem !important;
+  }
+}
+
+/* ===== ESTILOS EXISTENTES PARA OTRAS PÁGINAS ===== */
+
+/* Personalizar botones */
+.btn-primary {
+  background-color: #0056b3;
+  border: none;
+}
+
+.btn-success {
+  background-color: #198754;
+  border: none;
+}
+
+.card {
+  max-width: 500px;
+  margin: auto;
+}

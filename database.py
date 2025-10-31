@@ -326,9 +326,8 @@ def listar_habitaciones_disponibles(fecha_entrada, fecha_salida):
             SELECT r.id_habitacion
             FROM reservas r
             WHERE r.estado IN ('confirmada', 'ocupada')
-              AND NOT (r.fecha_salida <= %s OR r.fecha_entrada >= %s)
+            AND NOT (r.fecha_salida <= %s OR r.fecha_entrada >= %s)
         )
-        AND h.estado = 'disponible'
         ORDER BY h.numero_habitacion
         """
         cursor.execute(query, (fecha_entrada_dt, fecha_salida_dt))
@@ -441,6 +440,7 @@ def listar_reservas():
             FROM reservas r
             JOIN clientes c ON r.id_cliente = c.id_cliente
             JOIN habitaciones h ON r.id_habitacion = h.id
+            WHERE r.estado = 'confirmada'
             ORDER BY r.fecha_entrada DESC
         """)
         reservas = cursor.fetchall()
@@ -813,30 +813,83 @@ def listar_acompanantes(id_reserva):
             conn.close()
 
 def liberar_reservas_vencidas():
-    """Libera habitaciones cuyas reservas ocupadas o confirmadas ya vencieron (fecha_salida <= NOW())."""
+    """Marca como vencidas las reservas cuya fecha de salida ya pasó,
+       sin liberar automáticamente la habitación."""
     conn = None
     cursor = None
     try:
         conn = conectar()
         cursor = conn.cursor()
-        # Finalizar reservas vencidas y liberar habitación
+
         cursor.execute("""
-            SELECT id, id_habitacion FROM reservas 
+            UPDATE reservas
+            SET estado = 'vencida'
             WHERE fecha_salida <= NOW() AND estado IN ('confirmada','ocupada')
         """)
-        filas = cursor.fetchall()
-        for res_id, hab_id in filas:
-            cursor.execute("UPDATE reservas SET estado = 'cancelada' WHERE id = %s", (res_id,))
-            cursor.execute("UPDATE habitaciones SET estado = 'disponible' WHERE id = %s", (hab_id,))
+
         conn.commit()
-        if filas:
-            logger.info(f"Liberadas {len(filas)} reservas vencidas")
+        logger.info("Reservas vencidas actualizadas (sin liberar habitación automáticamente)")
         return True
+
     except mysql.connector.Error as e:
-        logger.error(f"Error al liberar reservas vencidas: {e}")
+        logger.error(f"Error al actualizar reservas vencidas: {e}")
         if conn:
             conn.rollback()
         return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def listar_habitaciones_vencidas():
+    """Habitaciones con reservas vencidas que requieren liberación manual."""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+        SELECT h.id AS id_habitacion, h.numero_habitacion, 
+               r.id AS id_reserva, r.fecha_salida,
+               c.nombre, c.apellido
+        FROM habitaciones h
+        JOIN reservas r ON r.id_habitacion = h.id
+        JOIN clientes c ON r.id_cliente = c.id_cliente
+        WHERE r.estado = 'vencida'
+          AND h.estado = 'ocupada'
+        ORDER BY r.fecha_salida
+        """
+        
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        logger.error(f"Error al listar habitaciones vencidas: {e}")
+        return []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            
+def liberar_habitacion(id_habitacion):
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("UPDATE habitaciones SET estado='disponible' WHERE id=%s", (id_habitacion,))
+        conn.commit()
+        return True
+
+    except Exception as e:
+        logger.error(f"Error al liberar habitación: {e}")
+        if conn:
+            conn.rollback()
+        return False
+
     finally:
         if cursor:
             cursor.close()

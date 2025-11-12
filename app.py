@@ -3,6 +3,7 @@ from datetime import datetime
 import database
 import logging
 import os
+import json
 
 
 # Configurar logging
@@ -11,6 +12,17 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'clave_secreta_demo_2024')  # Cambiar en producción
+
+# Agregar filtro JSON para templates
+@app.template_filter('from_json')
+def from_json_filter(value):
+    """Convierte un string JSON en objeto Python"""
+    if not value:
+        return []
+    try:
+        return json.loads(value)
+    except:
+        return []
 
 @app.route('/')
 def index():
@@ -51,21 +63,31 @@ def admin_panel():
     
     # Obtener estadísticas básicas
     try:
-        # Liberar automáticamente reservas vencidas y habitaciones asociadas
+        # Marcar reservas vencidas (sin liberar habitación) y avisar
         try:
             database.liberar_reservas_vencidas()
         except Exception as _:
-            pass
+            logger.exception("Fallo al marcar reservas vencidas")
+        try:
+            vencidas = database.listar_habitaciones_vencidas() or []
+            if vencidas:
+                for v in vencidas[:5]:
+                    flash(f"Habitación {v['numero_habitacion']} tiene reserva vencida (salida: {v['fecha_salida']}). Ingrese al detalle para liberar manualmente.", "warning")
+        except Exception:
+            logger.exception("Fallo al listar habitaciones vencidas")
         clientes = database.listar_clientes()
         reservas = database.listar_reservas()
         habitaciones = database.listar_todas_habitaciones()
         
+        # Filtrar habitaciones en mantenimiento de las estadísticas
+        habitaciones_activas = [h for h in habitaciones if h['estado'] != 'mantenimiento']
+        
         stats = {
             'total_clientes': len(clientes),
             'total_reservas': len(reservas),
-            'total_habitaciones': len(habitaciones),
-            'habitaciones_disponibles': len([h for h in habitaciones if h['estado'] == 'disponible']),
-            'habitaciones_ocupadas': len([h for h in habitaciones if h['estado'] == 'ocupada'])
+            'total_habitaciones': len(habitaciones_activas),
+            'habitaciones_disponibles': len([h for h in habitaciones_activas if h['estado'] == 'disponible']),
+            'habitaciones_ocupadas': len([h for h in habitaciones_activas if h['estado'] == 'ocupada'])
         }
         
         return render_template('admin_panel.html', stats=stats)
@@ -253,6 +275,24 @@ def lista_reservas():
         flash("Error al cargar lista de reservas", "error")
         return render_template('lista_reservas.html', reservas=[])
 
+# HISTORIAL
+@app.route('/historial', methods=['GET', 'POST'])
+def historial():
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+
+    try:
+        meses = request.values.getlist('mes')
+        anios = request.values.getlist('anio')
+        meses_int = [int(m) for m in meses if m.isdigit()]
+        anios_int = [int(a) for a in anios if a.isdigit()]
+        registros = database.listar_historial(meses=meses_int or None, anios=anios_int or None)
+        return render_template('historial.html', registros=registros, meses_sel=meses_int, anios_sel=anios_int)
+    except Exception as e:
+        logger.error(f"Error al cargar historial: {e}")
+        flash("Error al cargar historial", "error")
+        return render_template('historial.html', registros=[], meses_sel=[], anios_sel=[])
+
 @app.route('/habitaciones')
 def lista_habitaciones():
     if not session.get('admin'):
@@ -272,7 +312,8 @@ def cambiar_estado_habitaciones():
         return redirect(url_for('admin_login'))
     
     try:
-        habitaciones = database.listar_todas_habitaciones()
+        # Usar función que incluye habitaciones en mantenimiento para poder cambiarles el estado
+        habitaciones = database.listar_todas_habitaciones_admin()
 
         if request.method == 'POST':
             id_habitacion = request.form.get('habitacion_id', '').strip()
@@ -399,7 +440,7 @@ def modificar_precio():
         logger.error(f"Error al modificar precio: {e}")
         flash('Error interno del servidor', 'error')
 
-    return redirect(url_for('lista_habitaciones'))
+    return redirect(url_for('cambiar_estado_habitaciones'))
 
 # MARCAR RESERVA COMO OCUPADA
 @app.route('/reservas/marcar_ocupada/<int:id_reserva>', methods=['POST'])
@@ -457,14 +498,13 @@ def cancelar_reserva(id_reserva):
             flash("Reserva no encontrada", "error")
             return redirect(url_for('lista_reservas'))
         
-        # Cambiar estado de la reserva a 'cancelada'
-        exito = database.cambiar_estado_reserva(id_reserva, 'cancelada')
+        # Archivar y eliminar
+        exito = database.archivar_y_eliminar_reserva(id_reserva, motivo_archivo='cancelada')
         if exito:
-            # Liberar la habitación (cambiar a 'disponible')
             database.cambiar_estado_habitacion(reserva['id_habitacion'], 'disponible')
-            flash(f"Reserva #{id_reserva} cancelada y habitación liberada", "success")
+            flash(f"Reserva #{id_reserva} archivada y eliminada. Habitación liberada", "success")
         else:
-            flash("Error al cancelar la reserva", "error")
+            flash("Error al archivar/eliminar la reserva", "error")
             
     except Exception as e:
         logger.error(f"Error al cancelar reserva: {e}")
@@ -484,7 +524,7 @@ def detalle_habitacion_ruta(id_habitacion):
             flash("Habitación no encontrada", "error")
             return redirect(url_for('lista_habitaciones'))
 
-        # ✅ Nueva lógica: solo reserva si está ocupada y no confirmada
+        # Obtener reserva activa (si existe)
         reserva = database.obtener_reserva_activa_por_habitacion(id_habitacion)
 
         cliente = None
@@ -515,6 +555,9 @@ def detalle_habitacion_ruta(id_habitacion):
             except Exception:
                 pagos = []
 
+        # Obtener historial de reservas de esta habitación
+        historial = database.obtener_historial_por_habitacion(id_habitacion)
+
         return render_template(
             'detalle_habitacion.html',
             habitacion=habitacion,
@@ -523,7 +566,8 @@ def detalle_habitacion_ruta(id_habitacion):
             acompanantes=acompanantes,
             pagos=pagos,
             total_pagado=total_pagado,
-            saldo_restante=saldo_restante
+            saldo_restante=saldo_restante,
+            historial=historial
         )
 
     except Exception as e:
@@ -531,5 +575,49 @@ def detalle_habitacion_ruta(id_habitacion):
         flash("Error al cargar detalle de habitación", "error")
         return redirect(url_for('lista_habitaciones'))
 
+# LIBERAR HABITACIÓN
+@app.route('/habitaciones/liberar/<int:id_habitacion>', methods=['POST'])
+def liberar_habitacion_ruta(id_habitacion):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        exito = database.liberar_habitacion(id_habitacion)
+        if exito:
+            flash('Habitación liberada exitosamente', 'success')
+        else:
+            flash('Error al liberar habitación', 'error')
+    except Exception as e:
+        logger.error(f"Error al liberar habitación: {e}")
+        flash('Error al liberar habitación', 'error')
+    
+    return redirect(url_for('detalle_habitacion_ruta', id_habitacion=id_habitacion))
+
+# ELIMINAR REGISTROS DEL HISTORIAL
+@app.route('/historial/eliminar', methods=['POST'])
+def eliminar_historial():
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        # Obtener IDs seleccionados
+        ids_str = request.form.getlist('ids_historial')
+        ids_historial = [int(id_str) for id_str in ids_str if id_str.isdigit()]
+        
+        if not ids_historial:
+            flash('No se seleccionó ningún registro para eliminar', 'warning')
+            return redirect(url_for('historial'))
+        
+        exito = database.eliminar_registros_historial(ids_historial)
+        if exito:
+            flash(f'{len(ids_historial)} registro(s) eliminado(s) del historial', 'success')
+        else:
+            flash('Error al eliminar registros del historial', 'error')
+    except Exception as e:
+        logger.error(f"Error al eliminar del historial: {e}")
+        flash('Error al eliminar registros del historial', 'error')
+    
+    return redirect(url_for('historial'))
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

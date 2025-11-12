@@ -1,0 +1,77 @@
+====================================================================
+  INSTRUCCIONES PARA APLICAR CORRECCIONES EN LA BASE DE DATOS
+====================================================================
+
+IMPORTANTE: Debes ejecutar el archivo fix_database.sql ANTES de usar
+la aplicación para corregir la estructura de la base de datos.
+
+--------------------------------------------------------------------
+OPCIÓN 1: Usando phpMyAdmin
+--------------------------------------------------------------------
+
+1. Abre phpMyAdmin en tu navegador: http://localhost/phpmyadmin
+
+2. En el panel izquierdo, selecciona la base de datos "hotel"
+
+3. Haz clic en la pestaña "SQL" en el menú superior
+
+4. Abre el archivo fix_database.sql con un editor de texto (Bloc de notas)
+
+5. Copia TODO el contenido del archivo
+
+6. Pégalo en el área de texto de phpMyAdmin
+
+7. Haz clic en el botón "Continuar" o "Go"
+
+8. Deberías ver el mensaje: "Base de datos corregida exitosamente"
+
+--------------------------------------------------------------------
+OPCIÓN 2: Usando línea de comandos MySQL
+--------------------------------------------------------------------
+
+1. Abre la terminal o símbolo del sistema
+
+2. Navega hasta la carpeta del proyecto:
+   cd "c:\Users\Edu\Desktop\repositorio para pruebas\proyecto-hotel-2"
+
+3. Ejecuta el siguiente comando:
+   mysql -u root -p hotel < fix_database.sql
+
+4. Ingresa tu contraseña de MySQL cuando te la pida
+
+5. Si todo sale bien, verás el mensaje de éxito
+
+--------------------------------------------------------------------
+VERIFICACIÓN
+--------------------------------------------------------------------
+
+Para verificar que las correcciones se aplicaron correctamente:
+
+1. En phpMyAdmin, selecciona la base de datos "hotel"
+
+2. Haz clic en la tabla "reservas"
+
+3. Haz clic en "Estructura"
+
+4. Verifica que el campo "estado" tenga estos valores:
+   ENUM('confirmada','cancelada','ocupada','vencida')
+   
+5. Haz clic en la tabla "historial_reservas"
+
+6. Verifica que tenga el campo "id_historial" como PRIMARY KEY
+
+--------------------------------------------------------------------
+¿QUÉ HACE ESTE SCRIPT?
+--------------------------------------------------------------------
+
+✓ Agrega el estado 'vencida' al enum de la tabla reservas
+✓ Recrea la tabla historial_reservas con la estructura correcta
+✓ Actualiza la vista v_reservas_con_anticipos
+✓ Corrige reservas con estado vacío
+
+--------------------------------------------------------------------
+
+Después de aplicar estas correcciones, puedes iniciar la aplicación
+normalmente con: python app.py
+
+====================================================================

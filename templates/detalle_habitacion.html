@@ -16,79 +16,50 @@
       <p><strong>Precio por noche:</strong> ${{ habitacion.precio_por_noche }}</p>
       <p><strong>Estado actual:</strong> {{ habitacion.estado }}</p>
 
-      {% if reserva %}
+      {% set h_actual = historial[0] if historial and historial|length > 0 else None %}
+      {% if h_actual %}
       <hr>
-      <h5>Reserva actual</h5>
-      <p><strong>Entrada:</strong> {{ reserva.fecha_entrada }}</p>
-      <p><strong>Salida:</strong> {{ reserva.fecha_salida }}</p>
-      <p><strong>Estado:</strong> {{ reserva.estado }}</p>
+      <h5>Reserva (desde historial)</h5>
+      <p><strong>Entrada:</strong> {{ h_actual.fecha_entrada }}</p>
+      <p><strong>Salida:</strong> {{ h_actual.fecha_salida }}</p>
+      <p><strong>Estado:</strong> {{ h_actual.estado }}</p>
 
-      {% if cliente %}
       <hr>
-      <h5>Cliente principal</h5>
+      <h5>Cliente</h5>
       <ul>
-        <li><strong>Nombre:</strong> {{ cliente.nombre }} {{ cliente.apellido }}</li>
-        <li><strong>DNI:</strong> {{ cliente.dni }}</li>
-        <li><strong>Teléfono:</strong> {{ cliente.telefono }}</li>
-        <li><strong>Email:</strong> {{ cliente.email }}</li>
-        <li><strong>Dirección:</strong> {{ cliente.direccion }}</li>
+        <li><strong>Nombre:</strong> {{ h_actual.nombre }} {{ h_actual.apellido }}</li>
+        <li><strong>DNI:</strong> {{ h_actual.dni_pasaporte_cpf }}</li>
       </ul>
-      {% endif %}
 
-      {% if acompanantes %}
+      {% if h_actual.acompanantes_json %}
       <hr>
       <h5>Acompañantes</h5>
       <ul>
-        {% for a in acompanantes %}
+        {% set acomp_list = h_actual.acompanantes_json | from_json %}
+        {% for a in acomp_list %}
           <li>{{ a.nombre }} - DNI: {{ a.dni }}</li>
         {% endfor %}
       </ul>
       {% endif %}
 
       <hr>
-      <h5>Pagos</h5>
-      {% if pagos and pagos|length > 0 %}
-      <div class="table-responsive">
-        <table class="table table-sm table-striped align-middle">
-          <thead>
-            <tr>
-              <th>Método</th>
-              <th>Fecha</th>
-              <th class="text-end">Monto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in pagos %}
-            <tr>
-              <td>{{ p.metodo_pago|title }}</td>
-              <td>{{ p.fecha_pago }}</td>
-              <td class="text-end">${{ "%.2f"|format(p.monto) }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th colspan="2" class="text-end">Total Pagado</th>
-              <th class="text-end">${{ "%.2f"|format(total_pagado) }}</th>
-            </tr>
-            <tr>
-              <th colspan="2" class="text-end">Saldo Restante</th>
-              <th class="text-end">${{ "%.2f"|format(saldo_restante or 0) }}</th>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <h5>Montos</h5>
+      <ul>
+        <li><strong>Total:</strong> ${{ "%.2f"|format(h_actual.monto_total or 0) }}</li>
+        <li><strong>Anticipo:</strong> ${{ "%.2f"|format(h_actual.monto_anticipo or 0) }}</li>
+        <li><strong>Restante:</strong> ${{ "%.2f"|format(h_actual.monto_restante or 0) }}</li>
+      </ul>
       {% else %}
-        <p class="text-muted">No hay pagos registrados. {% if reserva.monto_anticipo %}(Anticipo registrado: ${{ "%.2f"|format(reserva.monto_anticipo) }}){% endif %}</p>
-        <p><strong>Total Pagado:</strong> ${{ "%.2f"|format(total_pagado or 0) }}</p>
-        <p><strong>Saldo Restante:</strong> ${{ "%.2f"|format(saldo_restante or 0) }}</p>
-      {% endif %}
-      {% else %}
-      <div class="alert alert-info mt-3">Esta habitación no tiene una reserva activa.</div>
+      <div class="alert alert-info mt-3">No hay registros en el historial para esta habitación.</div>
       {% endif %}
 
       <div class="text-center mt-4">
         <a href="{{ url_for('lista_habitaciones') }}" class="btn btn-secondary">Volver</a>
+        {% if habitacion.estado != 'disponible' %}
+        <form method="POST" action="{{ url_for('liberar_habitacion_ruta', id_habitacion=habitacion.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro que desea liberar esta habitación?');">
+          <button type="submit" class="btn btn-success ms-2">Liberar Habitación</button>
+        </form>
+        {% endif %}
       </div>
     </div>
   </div>

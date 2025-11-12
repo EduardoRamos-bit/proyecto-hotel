@@ -83,7 +83,7 @@ def registrar_pago(id_reserva, monto, metodo_pago, fecha_pago=None):
         cursor = conn.cursor()
         if fecha_pago is None:
             cursor.execute(
-                "INSERT INTO pagos (id_reserva, monto, fecha_pago, metodo_pago) VALUES (%s, %s, CURDATE(), %s)",
+                "INSERT INTO pagos (id_reserva, monto, fecha_pago, metodo_pago) VALUES (%s, %s, NOW(), %s)",
                 (id_reserva, monto, metodo_pago)
             )
         else:
@@ -300,7 +300,7 @@ def listar_clientes():
             conn.close()
 
 def listar_habitaciones_disponibles(fecha_entrada, fecha_salida):
-    """Lista habitaciones disponibles para un rango de fecha y hora"""
+    """Lista habitaciones disponibles para un rango de fecha y hora, excluyendo las que están en mantenimiento"""
     conn = None
     cursor = None
     try:
@@ -319,10 +319,12 @@ def listar_habitaciones_disponibles(fecha_entrada, fecha_salida):
             logger.warning("No se pueden hacer reservas para fecha y hora pasadas")
             return []
         
+        # Excluir habitaciones en mantenimiento y las que tienen reservas en el rango de fechas
         query = """
         SELECT * 
         FROM habitaciones h
-        WHERE h.id NOT IN (
+        WHERE h.estado != 'mantenimiento'
+        AND h.id NOT IN (
             SELECT r.id_habitacion
             FROM reservas r
             WHERE r.estado IN ('confirmada', 'ocupada')
@@ -332,7 +334,7 @@ def listar_habitaciones_disponibles(fecha_entrada, fecha_salida):
         """
         cursor.execute(query, (fecha_entrada_dt, fecha_salida_dt))
         habitaciones = cursor.fetchall()
-        logger.info(f"Encontradas {len(habitaciones)} habitaciones disponibles")
+        logger.info(f"Encontradas {len(habitaciones)} habitaciones disponibles (sin mantenimiento)")
         return habitaciones
     except mysql.connector.Error as e:
         logger.error(f"Error al listar habitaciones disponibles: {e}")
@@ -345,7 +347,6 @@ def listar_habitaciones_disponibles(fecha_entrada, fecha_salida):
             cursor.close()
         if conn:
             conn.close()
-
 
 
 def cambiar_estado_habitacion(id_habitacion, nuevo_estado):
@@ -455,14 +456,15 @@ def listar_reservas():
             conn.close()
 
 def listar_todas_habitaciones():
-    """Lista todas las habitaciones con sus reservas futuras (con hora)"""
+    """Lista todas las habitaciones (excluyendo las que están en mantenimiento) con sus reservas futuras (con hora)"""
     conn = None
     cursor = None
     try:
         conn = conectar()
         cursor = conn.cursor(dictionary=True)
         
-        cursor.execute("SELECT * FROM habitaciones ORDER BY numero_habitacion")
+        # Excluir habitaciones en mantenimiento del listado del admin
+        cursor.execute("SELECT * FROM habitaciones WHERE estado != 'mantenimiento' ORDER BY numero_habitacion")
         habitaciones = cursor.fetchall()
         
         for hab in habitaciones:
@@ -488,6 +490,42 @@ def listar_todas_habitaciones():
         return habitaciones
     except mysql.connector.Error as e:
         logger.error(f"Error al listar habitaciones: {e}")
+        return []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def listar_todas_habitaciones_admin():
+    """Lista TODAS las habitaciones (incluyendo mantenimiento) para gestión de estados"""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Incluir TODAS las habitaciones, incluso las que están en mantenimiento
+        cursor.execute("SELECT * FROM habitaciones ORDER BY numero_habitacion")
+        habitaciones = cursor.fetchall()
+        
+        for hab in habitaciones:
+            cursor.execute(
+                """
+                SELECT fecha_entrada, fecha_salida, estado
+                FROM reservas
+                WHERE id_habitacion = %s
+                  AND fecha_salida >= NOW()
+                  AND estado = 'confirmada'
+                ORDER BY fecha_entrada
+                """,
+                (hab['id'],)
+            )
+            hab['reservas'] = cursor.fetchall()
+        
+        return habitaciones
+    except mysql.connector.Error as e:
+        logger.error(f"Error al listar todas las habitaciones (admin): {e}")
         return []
     finally:
         if cursor:
@@ -608,7 +646,18 @@ def obtener_habitacion(id_habitacion):
             conn.close()
 
 def cambiar_estado_reserva(id_reserva, nuevo_estado):
-    """Cambia el estado de una reserva"""
+    """Cambia el estado de una reserva. Si el nuevo estado es 'ocupada' o 'cancelada', 
+    archiva automáticamente la reserva en historial y la elimina de reservas."""
+    
+    # Si el estado es 'ocupada' o 'cancelada', archivar y eliminar
+    if nuevo_estado in ('ocupada', 'cancelada'):
+        logger.info(f"Estado {nuevo_estado} detectado, archivando reserva {id_reserva}...")
+        exito = archivar_y_eliminar_reserva(id_reserva, motivo_archivo=nuevo_estado)
+        if exito:
+            logger.info(f"Reserva {id_reserva} archivada exitosamente con estado {nuevo_estado}")
+        return exito
+    
+    # Para otros estados (confirmada, vencida), solo actualizar
     conn = None
     cursor = None
     try:
@@ -872,8 +921,141 @@ def listar_habitaciones_vencidas():
             cursor.close()
         if conn:
             conn.close()
+
+def archivar_y_eliminar_reserva(id_reserva, motivo_archivo='cancelada'):
+    """Copia una reserva con todos sus datos (incluyendo acompañantes) a historial_reservas y la borra de reservas."""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        # Obtener datos completos de la reserva desde la vista v_reservas_con_anticipos
+        cursor.execute(
+            """
+            SELECT * FROM v_reservas_con_anticipos
+            WHERE id = %s
+            """,
+            (id_reserva,)
+        )
+        reserva = cursor.fetchone()
+        if not reserva:
+            logger.warning(f"Reserva {id_reserva} no encontrada en v_reservas_con_anticipos")
+            return False
+
+        # Obtener acompañantes de la reserva
+        cursor.execute(
+            """
+            SELECT nombre, dni FROM acompanantes
+            WHERE id_reserva = %s
+            """,
+            (id_reserva,)
+        )
+        acompanantes = cursor.fetchall()
+        
+        # Convertir acompañantes a JSON
+        import json
+        acompanantes_json = json.dumps(acompanantes, default=str) if acompanantes else None
+
+        # Cambiar cursor para inserts simples
+        cursor.close()
+        cursor = conn.cursor()
+
+        # Insertar en historial_reservas con TODOS los datos
+        cursor.execute(
+            """
+            INSERT INTO historial_reservas (
+                id_reserva, id_cliente, id_habitacion, fecha_entrada, fecha_salida,
+                monto_total, monto_anticipo, porcentaje_anticipo, monto_restante, dias_estadia,
+                estado, nombre, apellido, dni_pasaporte_cpf, numero_habitacion, tipo_habitacion,
+                acompanantes_json
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                reserva['id'],
+                reserva['id_cliente'],
+                reserva['id_habitacion'],
+                reserva['fecha_entrada'],
+                reserva['fecha_salida'],
+                reserva.get('monto_total'),
+                reserva.get('monto_anticipo'),
+                reserva.get('porcentaje_anticipo'),
+                reserva.get('monto_restante'),
+                reserva.get('dias_estadia'),
+                motivo_archivo or reserva.get('estado_reserva') or 'cancelada',
+                reserva.get('nombre'),
+                reserva.get('apellido'),
+                reserva.get('dni_pasaporte_cpf'),
+                reserva.get('numero_habitacion'),
+                reserva.get('tipo_habitacion'),
+                acompanantes_json
+            ),
+        )
+
+        # Borrar acompañantes primero (por foreign key)
+        cursor.execute("DELETE FROM acompanantes WHERE id_reserva = %s", (id_reserva,))
+        
+        # Borrar de reservas
+        cursor.execute("DELETE FROM reservas WHERE id = %s", (id_reserva,))
+
+        conn.commit()
+        logger.info(f"Reserva {id_reserva} archivada en historial_reservas y eliminada de reservas")
+        return True
+    except mysql.connector.Error as e:
+        logger.error(f"Error al archivar/eliminar reserva: {e}")
+        if conn:
+            conn.rollback()
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def listar_historial(meses=None, anios=None):
+    """Lista historial_reservas filtrando por meses (1-12) y años (YYYY)."""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        condiciones = []
+        params = []
+        if meses:
+            placeholders = ",".join(["%s"] * len(meses))
+            condiciones.append(f"MONTH(fecha_entrada) IN ({placeholders})")
+            params.extend(meses)
+        if anios:
+            placeholders = ",".join(["%s"] * len(anios))
+            condiciones.append(f"YEAR(fecha_entrada) IN ({placeholders})")
+            params.extend(anios)
+
+        where_sql = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+        sql = f"""
+            SELECT id_historial, id_reserva, id_cliente, id_habitacion,
+                   fecha_entrada, fecha_salida, 
+                   monto_total, monto_anticipo, porcentaje_anticipo, monto_restante, dias_estadia,
+                   estado, nombre, apellido, dni_pasaporte_cpf, 
+                   numero_habitacion, tipo_habitacion, acompanantes_json,
+                   fecha_registro
+            FROM historial_reservas
+            {where_sql}
+            ORDER BY fecha_entrada DESC, id_historial DESC
+        """
+        cursor.execute(sql, tuple(params))
+        return cursor.fetchall()
+    except mysql.connector.Error as e:
+        logger.error(f"Error al listar historial: {e}")
+        return []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
             
 def liberar_habitacion(id_habitacion):
+    """Libera una habitación cambiando su estado a 'disponible'"""
     conn = None
     cursor = None
     try:
@@ -882,6 +1064,7 @@ def liberar_habitacion(id_habitacion):
 
         cursor.execute("UPDATE habitaciones SET estado='disponible' WHERE id=%s", (id_habitacion,))
         conn.commit()
+        logger.info(f"Habitación {id_habitacion} liberada")
         return True
 
     except Exception as e:
@@ -890,6 +1073,71 @@ def liberar_habitacion(id_habitacion):
             conn.rollback()
         return False
 
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def eliminar_registros_historial(ids_historial):
+    """Elimina uno o varios registros del historial_reservas por sus IDs"""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor()
+        
+        if not ids_historial or len(ids_historial) == 0:
+            return False
+        
+        placeholders = ','.join(['%s'] * len(ids_historial))
+        query = f"DELETE FROM historial_reservas WHERE id_historial IN ({placeholders})"
+        cursor.execute(query, tuple(ids_historial))
+        
+        conn.commit()
+        logger.info(f"Eliminados {cursor.rowcount} registros del historial")
+        return True
+        
+    except mysql.connector.Error as e:
+        logger.error(f"Error al eliminar registros del historial: {e}")
+        if conn:
+            conn.rollback()
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def obtener_historial_por_habitacion(id_habitacion):
+    """Obtiene el historial de reservas de una habitación específica"""
+    conn = None
+    cursor = None
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+            SELECT 
+                id_historial, id_reserva, id_cliente, 
+                fecha_entrada, fecha_salida,
+                monto_total, monto_anticipo, porcentaje_anticipo, monto_restante, dias_estadia,
+                estado, nombre, apellido, dni_pasaporte_cpf,
+                numero_habitacion, tipo_habitacion, acompanantes_json,
+                fecha_registro
+            FROM historial_reservas
+            WHERE id_habitacion = %s
+            ORDER BY fecha_entrada DESC
+        """
+        cursor.execute(query, (id_habitacion,))
+        historial = cursor.fetchall()
+        
+        logger.info(f"Encontrados {len(historial)} registros de historial para habitación {id_habitacion}")
+        return historial
+        
+    except mysql.connector.Error as e:
+        logger.error(f"Error al obtener historial de habitación: {e}")
+        return []
     finally:
         if cursor:
             cursor.close()

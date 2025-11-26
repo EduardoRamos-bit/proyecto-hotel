@@ -1,14 +1,480 @@
-/* Fuentes globales */
-body {
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* ===== PALETA DE COLORES SUAVES ===== */
+:root {
+  --color-primary: #6c7a89;
+  --color-primary-light: #8a9ba8;
+  --color-primary-dark: #4a5568;
+  --color-secondary: #95a5a6;
+  --color-success: #7fb069;
+  --color-warning: #d4a574;
+  --color-danger: #c97d7d;
+  --color-info: #6b9bd1;
+  --color-light: #f5f7fa;
+  --color-dark: #2c3e50;
+  --color-border: #e1e8ed;
+  --color-text: #34495e;
+  --color-text-light: #7f8c8d;
+  --bg-body: #f8f9fa;
 }
 
-/* ===== ESTILOS PARA PÁGINA DE BIENVENIDA ===== */
+/* ===== ESTILOS GLOBALES ===== */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-body);
+  color: var(--color-text);
+  font-size: 15px;
+  line-height: 1.6;
+}
 
-/* Fondo con imagen del hotel */
+/* ===== NAVEGACIÓN ===== */
+.navbar-custom {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  padding: 0.75rem 0;
+}
+
+.navbar-custom .navbar-brand {
+  color: var(--color-primary-dark) !important;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.navbar-custom .nav-link {
+  color: var(--color-text) !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  margin: 0 0.25rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.navbar-custom .nav-link:hover {
+  background-color: var(--color-light);
+  color: var(--color-primary-dark) !important;
+}
+
+.navbar-custom .nav-link.active {
+  background-color: var(--color-primary);
+  color: #ffffff !important;
+}
+
+.navbar-toggler {
+  border: none;
+  padding: 0.25rem 0.5rem;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+}
+
+/* ===== CONTENEDOR PRINCIPAL ===== */
+.app-content {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  min-height: calc(100vh - 200px);
+}
+
+/* ===== TARJETAS ===== */
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background-color: var(--color-light);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 1rem 1.25rem;
+}
+
+/* ===== BOTONES ===== */
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(108, 122, 137, 0.3);
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  background-color: #6a9d5a;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(127, 176, 105, 0.3);
+}
+
+.btn-warning {
+  background-color: var(--color-warning);
+  color: #ffffff;
+}
+
+.btn-warning:hover {
+  background-color: #c4955f;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(212, 165, 116, 0.3);
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #b86a6a;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(201, 125, 125, 0.3);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: #ffffff;
+}
+
+.btn-secondary:hover {
+  background-color: #7f8e8f;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.btn-outline-secondary {
+  border: 1px solid var(--color-secondary);
+  color: var(--color-secondary);
+  background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--color-secondary);
+  color: #ffffff;
+}
+
+.btn-outline-danger {
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  background-color: transparent;
+}
+
+.btn-outline-danger:hover {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}
+
+.btn-outline-info {
+  border: 1px solid var(--color-info);
+  color: var(--color-info);
+  background-color: transparent;
+}
+
+.btn-outline-info:hover {
+  background-color: var(--color-info);
+  color: #ffffff;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+}
+
+/* ===== TABLAS ===== */
+.table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table thead {
+  background-color: var(--color-primary-dark);
+  color: #ffffff;
+}
+
+.table thead th {
+  border: none;
+  padding: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-light);
+}
+
+.table tbody td {
+  padding: 1rem;
+  border-top: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: #fafbfc;
+}
+
+/* ===== BADGES ===== */
+.badge {
+  padding: 0.4rem 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.bg-success {
+  background-color: var(--color-success) !important;
+}
+
+.bg-warning {
+  background-color: var(--color-warning) !important;
+}
+
+.bg-danger {
+  background-color: var(--color-danger) !important;
+}
+
+.bg-info {
+  background-color: var(--color-info) !important;
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary) !important;
+}
+
+.bg-dark {
+  background-color: var(--color-dark) !important;
+}
+
+/* ===== ALERTAS ===== */
+.alert {
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid;
+}
+
+.alert-primary {
+  background-color: #e8ecf0;
+  color: var(--color-primary-dark);
+  border-left-color: var(--color-primary);
+}
+
+.alert-success {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-left-color: var(--color-success);
+}
+
+.alert-warning {
+  background-color: #fff3e0;
+  color: #e65100;
+  border-left-color: var(--color-warning);
+}
+
+.alert-danger {
+  background-color: #ffebee;
+  color: #c62828;
+  border-left-color: var(--color-danger);
+}
+
+.alert-info {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border-left-color: var(--color-info);
+}
+
+/* ===== FORMULARIOS ===== */
+.form-control,
+.form-select {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 0.2rem rgba(108, 122, 137, 0.15);
+  outline: none;
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.form-text {
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+}
+
+.input-group-text {
+  background-color: var(--color-light);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: 8px 0 0 8px;
+}
+
+/* ===== LISTAS ===== */
+.list-group-item {
+  border: 1px solid var(--color-border);
+  padding: 0.875rem 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+  background-color: var(--color-light);
+  border-color: var(--color-primary-light);
+}
+
+.list-group-item a {
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.list-group-item a:hover {
+  color: var(--color-primary-dark);
+}
+
+/* ===== MODALES ===== */
+.modal-content {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--color-border);
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-title {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--color-border);
+  padding: 1rem 1.5rem;
+}
+
+/* ===== TÍTULOS ===== */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.text-primary {
+  color: var(--color-primary-dark) !important;
+}
+
+.text-success {
+  color: var(--color-success) !important;
+}
+
+.text-warning {
+  color: var(--color-warning) !important;
+}
+
+.text-danger {
+  color: var(--color-danger) !important;
+}
+
+.text-muted {
+  color: var(--color-text-light) !important;
+}
+
+/* ===== TARJETAS DE ESTADÍSTICAS ===== */
+.card-stats {
+  border-left: 4px solid;
+  transition: transform 0.2s ease;
+}
+
+.card-stats:hover {
+  transform: translateY(-2px);
+}
+
+.card-stats.bg-primary {
+  border-left-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+}
+
+.card-stats.bg-success {
+  border-left-color: var(--color-success);
+  background: linear-gradient(135deg, var(--color-success) 0%, #8fc075 100%);
+}
+
+.card-stats.bg-info {
+  border-left-color: var(--color-info);
+  background: linear-gradient(135deg, var(--color-info) 0%, #7fa8d8 100%);
+}
+
+.card-stats.bg-warning {
+  border-left-color: var(--color-warning);
+  background: linear-gradient(135deg, var(--color-warning) 0%, #e0b589 100%);
+}
+
+/* ===== PÁGINA DE BIENVENIDA ===== */
 .welcome-body {
-  background: linear-gradient(135deg, rgba(0, 20, 40, 0.9), rgba(0, 40, 80, 0.8)), 
-              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23001a2e;stop-opacity:1" /><stop offset="50%" style="stop-color:%23002a4e;stop-opacity:1" /><stop offset="100%" style="stop-color:%23001a2e;stop-opacity:1" /></linearGradient></defs><rect width="1200" height="800" fill="url(%23bg)"/><g fill="none" stroke="%23d4af37" stroke-width="2" opacity="0.3"><path d="M0,400 Q300,200 600,400 T1200,400"/><path d="M0,600 Q400,300 800,600 T1200,600"/><path d="M0,200 Q200,100 400,200 T800,200 T1200,200"/></g></svg>');
+  background: linear-gradient(135deg, rgba(44, 62, 80, 0.95), rgba(52, 73, 94, 0.9)),
+              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%232c3e50;stop-opacity:1" /><stop offset="50%" style="stop-color:%2334495e;stop-opacity:1" /><stop offset="100%" style="stop-color:%232c3e50;stop-opacity:1" /></linearGradient></defs><rect width="1200" height="800" fill="url(%23bg)"/></svg>');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -18,7 +484,6 @@ body {
   position: relative;
 }
 
-/* Overlay para mejorar legibilidad */
 .welcome-overlay {
   position: fixed;
   top: 0;
@@ -26,43 +491,39 @@ body {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, 
-    rgba(0, 20, 40, 0.7) 0%, 
-    rgba(0, 40, 80, 0.6) 50%, 
-    rgba(0, 20, 40, 0.8) 100%);
+    rgba(44, 62, 80, 0.7) 0%, 
+    rgba(52, 73, 94, 0.6) 50%, 
+    rgba(44, 62, 80, 0.8) 100%);
   z-index: 1;
 }
 
-/* Contenido principal */
 .welcome-content {
   position: relative;
   z-index: 2;
 }
 
-/* Logo del hotel */
 .hotel-logo {
   font-size: 4rem;
-  color: #d4af37;
-  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+  color: var(--color-warning);
+  text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
   animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
-  from { text-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
-  to { text-shadow: 0 0 30px rgba(212, 175, 55, 0.8), 0 0 40px rgba(212, 175, 55, 0.3); }
+  from { text-shadow: 0 0 20px rgba(212, 165, 116, 0.5); }
+  to { text-shadow: 0 0 30px rgba(212, 165, 116, 0.8), 0 0 40px rgba(212, 165, 116, 0.3); }
 }
 
-/* Título principal */
 .hotel-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 3.5rem;
   font-weight: 700;
-  color: #d4af37;
+  color: #ffffff;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   letter-spacing: 2px;
   margin-bottom: 1rem;
 }
 
-/* Subtítulo */
 .hotel-subtitle {
   font-size: 1.3rem;
   color: #ffffff;
@@ -71,13 +532,12 @@ body {
   opacity: 0.9;
 }
 
-/* Tarjeta de bienvenida */
 .welcome-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(212, 165, 116, 0.2);
   position: relative;
   z-index: 2;
   overflow: hidden;
@@ -90,25 +550,21 @@ body {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #d4af37, #f4d03f, #d4af37);
+  background: linear-gradient(90deg, var(--color-warning), #e0b589, var(--color-warning));
 }
 
-/* Título de la tarjeta */
 .welcome-card .card-title {
-  color: #2c3e50;
-  font-family: 'Playfair Display', serif;
+  color: var(--color-text);
   font-size: 1.8rem;
   font-weight: 600;
 }
 
-/* Texto de la tarjeta */
 .welcome-card .card-text {
-  color: #5a6c7d;
+  color: var(--color-text-light);
   font-size: 1.1rem;
   line-height: 1.6;
 }
 
-/* Grid de características */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -122,33 +578,32 @@ body {
   align-items: center;
   text-align: center;
   padding: 1rem;
-  background: rgba(212, 175, 55, 0.1);
+  background: rgba(212, 165, 116, 0.1);
   border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 .feature-item:hover {
-  background: rgba(212, 175, 55, 0.2);
+  background: rgba(212, 165, 116, 0.2);
   transform: translateY(-2px);
 }
 
 .feature-item i {
   font-size: 2rem;
-  color: #d4af37;
+  color: var(--color-warning);
   margin-bottom: 0.5rem;
 }
 
 .feature-item span {
-  color: #2c3e50;
+  color: var(--color-text);
   font-weight: 500;
   font-size: 0.9rem;
 }
 
-/* Botón de bienvenida */
 .btn-welcome {
-  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  background: linear-gradient(135deg, var(--color-warning), #e0b589);
   border: none;
-  color: #2c3e50;
+  color: #ffffff;
   font-weight: 600;
   font-size: 1.1rem;
   padding: 12px 30px;
@@ -156,17 +611,16 @@ body {
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 15px rgba(212, 165, 116, 0.3);
 }
 
 .btn-welcome:hover {
-  background: linear-gradient(135deg, #f4d03f, #d4af37);
+  background: linear-gradient(135deg, #e0b589, var(--color-warning));
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-  color: #2c3e50;
+  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
+  color: #ffffff;
 }
 
-/* Footer de bienvenida */
 .welcome-footer {
   position: relative;
   z-index: 2;
@@ -178,7 +632,7 @@ body {
   font-weight: 300;
 }
 
-/* Responsive design */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .hotel-title {
     font-size: 2.5rem;
@@ -193,8 +647,9 @@ body {
     gap: 1rem;
   }
   
-  .welcome-card .card-body {
-    padding: 2rem !important;
+  .app-content {
+    padding: 1.5rem;
+    margin-top: 1rem;
   }
 }
 
@@ -207,25 +662,33 @@ body {
     grid-template-columns: 1fr;
   }
   
-  .welcome-card .card-body {
-    padding: 1.5rem !important;
+  .app-content {
+    padding: 1rem;
   }
 }
 
-/* ===== ESTILOS EXISTENTES PARA OTRAS PÁGINAS ===== */
-
-/* Personalizar botones */
-.btn-primary {
-  background-color: #0056b3;
-  border: none;
+/* ===== UTILIDADES ===== */
+.shadow-lg {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
-.btn-success {
-  background-color: #198754;
-  border: none;
+.rounded-4 {
+  border-radius: 12px !important;
 }
 
-.card {
-  max-width: 500px;
-  margin: auto;
+.text-center {
+  text-align: center;
 }
+
+.mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+.mt-3 {
+  margin-top: 1rem !important;
+}
+
+.mt-4 {
+  margin-top: 1.5rem !important;
+}
+

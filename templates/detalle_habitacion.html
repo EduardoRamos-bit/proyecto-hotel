@@ -1,67 +1,132 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Detalle de Habitación</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-  <div class="container mt-5">
+{% extends 'base.html' %}
+{% block title %}Detalle de Habitación{% endblock %}
+{% block content %}
+  <div class="container">
     <div class="card shadow-lg p-4 rounded-4">
-      <h3 class="text-center text-primary mb-4">Detalles de la Habitación {{ habitacion.numero_habitacion }}</h3>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-primary mb-0">
+          <i class="fas fa-bed me-2"></i>Detalles de la Habitación {{ habitacion.numero_habitacion }}
+        </h3>
+        <a href="{{ url_for('lista_habitaciones') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-arrow-left me-1"></i>Volver
+        </a>
+      </div>
 
-      <h5>Información de la habitación</h5>
-      <p><strong>Tipo:</strong> {{ habitacion.tipo }}</p>
-      <p><strong>Precio por noche:</strong> ${{ habitacion.precio_por_noche }}</p>
-      <p><strong>Estado actual:</strong> {{ habitacion.estado }}</p>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card" style="background-color: var(--color-light);">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-info-circle me-2"></i>Información de la Habitación
+              </h5>
+            </div>
+            <div class="card-body">
+              <p class="mb-2"><strong>Tipo:</strong> {{ habitacion.tipo|title }}</p>
+              <p class="mb-2"><strong>Precio por noche:</strong> ${{ "{:,.2f}".format(habitacion.precio_por_noche) }}</p>
+              <p class="mb-0">
+                <strong>Estado actual:</strong> 
+                {% if habitacion.estado == 'disponible' %}
+                  <span class="badge bg-success">{{ habitacion.estado|title }}</span>
+                {% elif habitacion.estado == 'ocupada' %}
+                  <span class="badge bg-danger">{{ habitacion.estado|title }}</span>
+                {% elif habitacion.estado == 'mantenimiento' %}
+                  <span class="badge bg-warning">{{ habitacion.estado|title }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ habitacion.estado|title }}</span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
 
-      {% set h_actual = historial[0] if historial and historial|length > 0 else None %}
+        <div class="col-md-6">
+          {% set h_actual = historial[0] if historial and historial|length > 0 else None %}
+          {% if h_actual %}
+          <div class="card" style="background-color: var(--color-light);">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-calendar-alt me-2"></i>Reserva Actual
+              </h5>
+            </div>
+            <div class="card-body">
+              <p class="mb-2"><strong>Entrada:</strong> {{ h_actual.fecha_entrada }}</p>
+              <p class="mb-2"><strong>Salida:</strong> {{ h_actual.fecha_salida }}</p>
+              <p class="mb-0">
+                <strong>Estado:</strong> 
+                <span class="badge bg-secondary">{{ h_actual.estado|title }}</span>
+              </p>
+            </div>
+          </div>
+          {% else %}
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>No hay registros en el historial para esta habitación.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
       {% if h_actual %}
-      <hr>
-      <h5>Reserva (desde historial)</h5>
-      <p><strong>Entrada:</strong> {{ h_actual.fecha_entrada }}</p>
-      <p><strong>Salida:</strong> {{ h_actual.fecha_salida }}</p>
-      <p><strong>Estado:</strong> {{ h_actual.estado }}</p>
-
-      <hr>
-      <h5>Cliente</h5>
-      <ul>
-        <li><strong>Nombre:</strong> {{ h_actual.nombre }} {{ h_actual.apellido }}</li>
-        <li><strong>DNI:</strong> {{ h_actual.dni_pasaporte_cpf }}</li>
-      </ul>
+      <div class="row g-4 mt-2">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-user me-2"></i>Cliente
+              </h5>
+            </div>
+            <div class="card-body">
+              <p class="mb-1"><strong>Nombre:</strong> {{ h_actual.nombre }} {{ h_actual.apellido }}</p>
+              <p class="mb-0"><strong>DNI:</strong> {{ h_actual.dni_pasaporte_cpf }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-dollar-sign me-2"></i>Montos
+              </h5>
+            </div>
+            <div class="card-body">
+              <p class="mb-1"><strong>Total:</strong> ${{ "%.2f"|format(h_actual.monto_total or 0) }}</p>
+              <p class="mb-1"><strong>Anticipo:</strong> ${{ "%.2f"|format(h_actual.monto_anticipo or 0) }}</p>
+              <p class="mb-0"><strong>Restante:</strong> ${{ "%.2f"|format(h_actual.monto_restante or 0) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {% if h_actual.acompanantes_json %}
-      <hr>
-      <h5>Acompañantes</h5>
-      <ul>
-        {% set acomp_list = h_actual.acompanantes_json | from_json %}
-        {% for a in acomp_list %}
-          <li>{{ a.nombre }} - DNI: {{ a.dni }}</li>
-        {% endfor %}
-      </ul>
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-users me-2"></i>Acompañantes
+          </h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            {% set acomp_list = h_actual.acompanantes_json | from_json %}
+            {% for a in acomp_list %}
+            <li class="list-group-item">{{ a.nombre }} - DNI: {{ a.dni }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
       {% endif %}
 
-      <hr>
-      <h5>Montos</h5>
-      <ul>
-        <li><strong>Total:</strong> ${{ "%.2f"|format(h_actual.monto_total or 0) }}</li>
-        <li><strong>Anticipo:</strong> ${{ "%.2f"|format(h_actual.monto_anticipo or 0) }}</li>
-        <li><strong>Restante:</strong> ${{ "%.2f"|format(h_actual.monto_restante or 0) }}</li>
-      </ul>
-      {% else %}
-      <div class="alert alert-info mt-3">No hay registros en el historial para esta habitación.</div>
-      {% endif %}
-
-      <div class="text-center mt-4">
-        <a href="{{ url_for('lista_habitaciones') }}" class="btn btn-secondary">Volver</a>
-        {% if habitacion.estado != 'disponible' %}
-        <form method="POST" action="{{ url_for('liberar_habitacion_ruta', id_habitacion=habitacion.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro que desea liberar esta habitación?');">
-          <button type="submit" class="btn btn-success ms-2">Liberar Habitación</button>
-        </form>
-        {% endif %}
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <div></div>
+        <div>
+          {% if habitacion.estado != 'disponible' %}
+          <form method="POST" action="{{ url_for('liberar_habitacion_ruta', id_habitacion=habitacion.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro que desea liberar esta habitación?');">
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-unlock me-2"></i>Liberar Habitación
+            </button>
+          </form>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
-</body>
-</html>
+{% endblock %}

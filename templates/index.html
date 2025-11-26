@@ -1,43 +1,34 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Inicio</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends 'base.html' %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+  {% with mensajes = get_flashed_messages(with_categories=True) %}
+    {% if mensajes %}
+      {% for cat, msg in mensajes %}
+        <div class="alert alert-{{ 'info' if cat=='message' else cat }} mt-3">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
- 
-</head>
-<body class="bg-light d-flex align-items-center justify-content-center vh-100">
-
-  <div class="container text-center">
-    {% with mensajes = get_flashed_messages(with_categories=True) %}
-      {% if mensajes %}
-        {% for cat, msg in mensajes %}
-          <div class="alert alert-{{ 'info' if cat=='message' else cat }} mt-3">{{ msg }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    <div class="card shadow-lg p-4 rounded-4">
-      <h1 class="mb-4 text-primary">Bienvenido al Sistema del Hotel</h1>
+  <div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 200px);">
+    <div class="card shadow-lg p-4 rounded-4 w-100" style="max-width: 500px;">
+      <div class="text-center mb-4">
+        <i class="fas fa-hotel fa-3x text-primary mb-3"></i>
+        <h1 class="mb-2 text-primary">Bienvenido al Sistema del Hotel</h1>
+        <p class="text-muted">Seleccione su tipo de acceso</p>
+      </div>
 
       <form method="POST">
         <div class="d-grid gap-3">
           <button type="submit" name="admin" class="btn btn-primary btn-lg">
-            Ingresar como Administrador
+            <i class="fas fa-user-shield me-2"></i>Ingresar como Administrador
           </button>
           <button type="submit" name="socio" class="btn btn-success btn-lg">
-            Ingresar como Socio
+            <i class="fas fa-user me-2"></i>Ingresar como Socio
           </button>
         </div>
       </form>
     </div>
   </div>
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}
 
     

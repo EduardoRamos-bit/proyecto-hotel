@@ -70,21 +70,4 @@
 {% endblock %}
 
 {% block scripts %}
-    <!-- Animaciones suaves -->
-    <script>
-        // Animación de entrada
-        document.addEventListener('DOMContentLoaded', function() {
-            const elements = document.querySelectorAll('.welcome-content, .welcome-card, .welcome-footer');
-            elements.forEach((element, index) => {
-                element.style.opacity = '0';
-                element.style.transform = 'translateY(30px)';
-                
-                setTimeout(() => {
-                    element.style.transition = 'all 0.8s ease-out';
-                    element.style.opacity = '1';
-                    element.style.transform = 'translateY(0)';
-                }, index * 200);
-            });
-        });
-    </script>
 {% endblock %}

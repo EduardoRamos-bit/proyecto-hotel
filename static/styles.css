@@ -44,7 +44,6 @@ body {
   padding: 0.5rem 1rem !important;
   margin: 0 0.25rem;
   border-radius: 6px;
-  transition: all 0.3s ease;
 }
 
 .navbar-custom .nav-link:hover {
@@ -82,11 +81,6 @@ body {
   border: none;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.3s ease;
-}
-
-.card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
@@ -102,7 +96,6 @@ body {
   border-radius: 8px;
   font-weight: 500;
   padding: 0.5rem 1.25rem;
-  transition: all 0.3s ease;
   border: none;
 }
 
@@ -114,8 +107,6 @@ body {
 .btn-primary:hover {
   background-color: var(--color-primary-dark);
   color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(108, 122, 137, 0.3);
 }
 
 .btn-success {
@@ -126,8 +117,6 @@ body {
 .btn-success:hover {
   background-color: #6a9d5a;
   color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(127, 176, 105, 0.3);
 }
 
 .btn-warning {
@@ -138,8 +127,6 @@ body {
 .btn-warning:hover {
   background-color: #c4955f;
   color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(212, 165, 116, 0.3);
 }
 
 .btn-danger {
@@ -150,8 +137,6 @@ body {
 .btn-danger:hover {
   background-color: #b86a6a;
   color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(201, 125, 125, 0.3);
 }
 
 .btn-secondary {
@@ -162,7 +147,6 @@ body {
 .btn-secondary:hover {
   background-color: #7f8e8f;
   color: #ffffff;
-  transform: translateY(-1px);
 }
 
 .btn-outline-primary {
@@ -237,10 +221,6 @@ body {
   text-transform: uppercase;
   font-size: 0.85rem;
   letter-spacing: 0.5px;
-}
-
-.table tbody tr {
-  transition: background-color 0.2s ease;
 }
 
 .table tbody tr:hover {
@@ -338,7 +318,6 @@ body {
   border-radius: 8px;
   padding: 0.625rem 1rem;
   font-size: 0.95rem;
-  transition: all 0.3s ease;
 }
 
 .form-control:focus,
@@ -371,7 +350,6 @@ body {
 .list-group-item {
   border: 1px solid var(--color-border);
   padding: 0.875rem 1.25rem;
-  transition: all 0.2s ease;
 }
 
 .list-group-item:hover {
@@ -382,7 +360,6 @@ body {
 .list-group-item a {
   color: var(--color-text);
   text-decoration: none;
-  transition: color 0.2s ease;
 }
 
 .list-group-item a:hover {
@@ -444,11 +421,6 @@ h1, h2, h3, h4, h5, h6 {
 /* ===== TARJETAS DE ESTADÍSTICAS ===== */
 .card-stats {
   border-left: 4px solid;
-  transition: transform 0.2s ease;
-}
-
-.card-stats:hover {
-  transform: translateY(-2px);
 }
 
 .card-stats.bg-primary {
@@ -473,11 +445,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ===== PÁGINA DE BIENVENIDA ===== */
 .welcome-body {
-  background: linear-gradient(135deg, rgba(44, 62, 80, 0.95), rgba(52, 73, 94, 0.9)),
-              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%232c3e50;stop-opacity:1" /><stop offset="50%" style="stop-color:%2334495e;stop-opacity:1" /><stop offset="100%" style="stop-color:%232c3e50;stop-opacity:1" /></linearGradient></defs><rect width="1200" height="800" fill="url(%23bg)"/></svg>');
+  background: linear-gradient(135deg, rgba(44, 62, 80, 0.95), rgba(52, 73, 94, 0.9));
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
   min-height: 100vh;
   margin: 0;
   padding: 0;
@@ -506,12 +476,6 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 4rem;
   color: var(--color-warning);
   text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
-  animation: glow 2s ease-in-out infinite alternate;
-}
-
-@keyframes glow {
-  from { text-shadow: 0 0 20px rgba(212, 165, 116, 0.5); }
-  to { text-shadow: 0 0 30px rgba(212, 165, 116, 0.8), 0 0 40px rgba(212, 165, 116, 0.3); }
 }
 
 .hotel-title {
@@ -534,7 +498,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .welcome-card {
   background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(10px);
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(212, 165, 116, 0.2);
@@ -580,12 +543,10 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1rem;
   background: rgba(212, 165, 116, 0.1);
   border-radius: 12px;
-  transition: all 0.3s ease;
 }
 
 .feature-item:hover {
   background: rgba(212, 165, 116, 0.2);
-  transform: translateY(-2px);
 }
 
 .feature-item i {
@@ -610,14 +571,11 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 50px;
   text-decoration: none;
   display: inline-block;
-  transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(212, 165, 116, 0.3);
 }
 
 .btn-welcome:hover {
   background: linear-gradient(135deg, #e0b589, var(--color-warning));
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
   color: #ffffff;
 }
 
